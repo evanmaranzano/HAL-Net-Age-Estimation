@@ -1,4 +1,4 @@
-# MobileNetV3 Age Estimation (DLDL + Stratified)
+# HAL-Net: Hybrid Attention Lightweight Age Estimation
 
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg?style=flat-square&logo=PyTorch&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)
@@ -6,7 +6,7 @@
 
 ## 📖 Project Overview (项目概述)
 
-This project implements a **lightweight, high-performance age estimation system** optimized for edge devices. It achieves state-of-the-art (SOTA) level accuracy on the AFAD dataset using **MobileNetV3-Large** combined with **Deep Label Distribution Learning (DLDL)** and strict **Stratified Sampling**.
+This project implements **HAL-Net** (Hybrid Attention Lightweight Network), a high-performance age estimation system optimized for edge devices. It achieves state-of-the-art (SOTA) level accuracy on the AFAD dataset using **MobileNetV3-Large** combined with **Coordinate Attention**, **Deep Label Distribution Learning (DLDL-v2)** and strict **Stratified Sampling**.
 
 **Key Performance Indicators:**
 *   **MAE**: **3.1480** (Test SOTA Competitive)

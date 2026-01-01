@@ -2,7 +2,8 @@ import torch
 
 class Config:
     # 基础配置
-    project_name = "MobileNetV3_Age_DLDL_AFAD_AAF_Nodes"
+    # 基础配置
+    project_name = "HAL-Net_Age_Estimation" # Previously: MobileNetV3_Age_DLDL_AFAD_AAF_Nodes
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # 数据路径 (已移除 UTKFace)

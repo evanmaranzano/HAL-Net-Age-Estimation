@@ -2,7 +2,7 @@
 
 **日期**: 2025-12-18
 **状态**: ✅ Verified (MAE 3.148)
-**项目**: MobileNetV3_Age_DLDL_Stratified
+**项目**: HAL-Net (Hybrid Attention Lightweight Network)
 
 ---
 
