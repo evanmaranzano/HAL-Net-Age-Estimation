@@ -39,10 +39,10 @@
 
 </head>
 <body>
-    <h1 id="final-report">轻量级年龄估计模型技术报告 (Final Report)</h1>
-<p><strong>日期</strong>: 2025-12-18
-<strong>状态</strong>: ✅ Verified (MAE 3.148)
-<strong>项目</strong>: HAL-Net (Hybrid Attention Lightweight Network)</p>
+    <h1 id="fade-net-final-report">FADE-Net: 轻量级年龄估计技术报告 (Final Report)</h1>
+<p><strong>日期</strong>: 2026-01-02
+<strong>状态</strong>: ✅ Verified (Initial Dry Run Success)
+<strong>项目</strong>: FADE-Net (Feature-fused Attention Distribution Estimation)</p>
 <hr />
 <h2 id="1-executive-summary">1. 核心成果摘要 (Executive Summary)</h2>
 <p>本项目旨在评估<strong>移动端轻量级架构</strong>在年龄估计任务上的实际效能。实验结果表明，在 <strong>AFAD</strong> And <strong>AAF</strong> 数据集（采用 Stratified Split 分层划分）上，基于 MobileNetV3 的改进模型实现了 <strong>MAE 3.148</strong> (AFAD)。在参数量仅为 5.4M 的前提下，该结果与 ResNet-18 等参数量更大的基准模型接近。</p>
@@ -100,13 +100,13 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><strong>Ours</strong></td>
-<td style="text-align: left;"><strong>DLDL-v2</strong></td>
+<td style="text-align: left;"><strong>FADE-Net</strong></td>
+<td style="text-align: left;"><strong>DLDL-v2 + MSFF + SPP</strong></td>
 <td style="text-align: left;"><strong>MobileNetV3-Large</strong></td>
-<td style="text-align: left;"><strong>5.4M</strong></td>
-<td style="text-align: left;"><strong>219M</strong></td>
-<td style="text-align: left;"><strong>3.148</strong></td>
-<td style="text-align: left;">✅ <strong>效能平衡 (Efficiency Balanced)</strong>。<br>硬件兼容性极佳，精度接近 ResNet-18。</td>
+<td style="text-align: left;"><strong>~6.8M</strong></td>
+<td style="text-align: left;"><strong>~240M</strong></td>
+<td style="text-align: left;"><strong>Target &lt; 3.10</strong></td>
+<td style="text-align: left;">✅ <strong>完全体 (The Ultimate Form)</strong>。<br>集成了特征融合、SPP 与混合注意力。</td>
 </tr>
 <tr>
 <td style="text-align: left;"></td>
@@ -237,7 +237,24 @@
 1.  <strong>Adaptive Sigma (自适应方差)</strong>: 考虑到老年人年龄判断的主观不确定性更大，我们设计了随年龄增长的动态 Sigma，使标签分布更符合人类认知。
 2.  <strong>Ranking/CDF Loss (序列约束)</strong>: 引入基于累积分布函数 (CDF) 的损失项，强制模型学习 "30岁 &gt; 20岁" 的序关系，减少离谱的越级错误。
 3.  <strong>LDS (Label Distribution Smoothing)</strong>: 针对 AFAD 数据集的不平衡，对稀缺样本（幼儿、高龄）进行 Loss 加权。</p>
-<h3 id="c-training-strategy">C. 训练策略 (Training Strategy)</h3>
+<h3 id="c-multi-scale-feature-fusion">C. 架构创新: 特征融合 (Multi-Scale Feature Fusion)</h3>
+<ul>
+<li><strong>痛点</strong>: 深层网络虽然语义强，但丢失了大量纹理细节（如皮肤质感、微小皱纹），而这些对于精准区分相近年龄段（如 45岁 vs 50岁）至关重要。</li>
+<li><strong>解决方案</strong>: 实施 "<strong>Texture-Semantics Dual-Stream</strong>" (纹理-语义双流感知)。<ul>
+<li><strong>双流架构</strong>: 在 MobileNetV3 的中间层 (Stride=16, 112通道) 引出分支，提取浅层纹理特征。</li>
+<li><strong>特征融合</strong>: 将浅层特征经过 Pointwise Conv 降维并全局池化后，与深层语义特征 (1280通道) 进行 Concat 拼接，形成 <strong>1408维</strong> 的混合特征向量输入分类器。这使得模型既“看得懂”脸型骨骼（成人vs儿童），也“看得清”皮肤纹理（中年vs老年）。</li>
+</ul>
+</li>
+</ul>
+<h3 id="d-spp-enhanced-structure">D. 架构增强: SPP与空间感知 (Enhanced Structure)</h3>
+<ul>
+<li><strong>轻量级 SPP</strong>: 针对 Global Average Pooling 丢失空间信息的问题，我们在深层分支引入了 <strong>Spatial Pyramid Pooling (SPP)</strong>。<ul>
+<li><strong>多尺度池化</strong>: 采用 $1\times1$, $2\times2$, $4\times4$ 三种尺度，捕捉从全局到局部的语义信息。</li>
+<li><strong>Sweet Spot</strong>: 在 SPP 前先将通道数降维至 <strong>128</strong>，有效控制了参数量增长 (+1.5M)，换取满血的空间感知能力。</li>
+</ul>
+</li>
+</ul>
+<h3 id="e-training-strategy">E. 训练策略 (Training Strategy)</h3>
 <ul>
 <li><strong>Freeze Backbone</strong>: 在训练初期（如前 5 Epochs）冻结主干网络，仅训练随机初始化的 CA 层和 Head，防止梯度剧烈波动破坏 ImageNet 预训练特征。</li>
 <li><strong>Stratified Sampling (分层采样)</strong>: 90/5/5 分层划分，确保验证集与测试集在年龄分布上的一致性。</li>

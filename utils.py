@@ -35,12 +35,22 @@ class DLDLProcessor:
         self.num_classes = config.num_classes
         
         # 动态 sigma 参数
-        self.use_adaptive_sigma = getattr(config, 'use_adaptive_sigma', False)
+        self.use_dldl_v2 = getattr(config, 'use_dldl_v2', True)
+        
+        # Original logic: use_adaptive_sigma was a separate flag.
+        # Now we merge it into 'use_dldl_v2' for ablation simplicity,
+        # OR we keep it independent but default it to True if dldl_v2 is True.
+        
+        # Let's say: use_adaptive_sigma is active ONLY IF use_dldl_v2 is True.
+        self.use_adaptive_sigma = self.use_dldl_v2 and getattr(config, 'use_adaptive_sigma', False)
+        
         if self.use_adaptive_sigma:
             self.sigma_min = getattr(config, 'sigma_min', 1.5)
             self.sigma_max = getattr(config, 'sigma_max', 3.5)
+            # print("✅ [Loss] Adaptive Sigma: ENABLED") # avoid spamming
         else:
             self.sigma = config.sigma
+            # print(f"ℹ️ [Loss] Adaptive Sigma: DISABLED (Fixed sigma={self.sigma})")
         
         # Label Smoothing 参数
         self.label_smoothing = getattr(config, 'label_smoothing', 0.0)
@@ -344,7 +354,14 @@ class CombinedLoss(nn.Module):
         self.weights = weights 
         
         # 使用 CDF loss 作为 "Rank/Structure" Loss
-        self.rank_loss_fn = OrderRegressionLoss(config)
+        # Only init if use_dldl_v2 is True
+        self.use_dldl_v2 = getattr(config, 'use_dldl_v2', True)
+        if self.use_dldl_v2:
+            self.rank_loss_fn = OrderRegressionLoss(config)
+            # print("✅ [Loss] Ranking Loss: ENABLED")
+        else:
+            self.rank_loss_fn = None
+            # print("ℹ️ [Loss] Ranking Loss: DISABLED (Standard L1+KL)")
 
     def forward(self, log_probs, target_dists, true_ages, logits):
         # 1. KL 散度 (Main Loss)
@@ -366,8 +383,13 @@ class CombinedLoss(nn.Module):
         
         # 4. Rank Loss (CDF Loss / EMD)
         # 注意: OrderRegressionLoss 内部实现了 CDF MSE
-        rank_loss = self.rank_loss_fn(logits, true_ages)
+        if self.use_dldl_v2 and self.rank_loss_fn is not None:
+            rank_loss = self.rank_loss_fn(logits, true_ages)
+            term_rank = self.lambda_rank * rank_loss
+        else:
+            rank_loss = torch.tensor(0.0).to(log_probs.device)
+            term_rank = 0.0
         
         # 总损失
-        total_loss = w_kl + self.lambda_l1 * l1 + self.lambda_rank * rank_loss
+        total_loss = w_kl + self.lambda_l1 * l1 + term_rank
         return total_loss, w_kl.item(), l1.item(), rank_loss.item()

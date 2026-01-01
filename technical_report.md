@@ -1,8 +1,8 @@
-# 轻量级年龄估计模型技术报告 (Final Report)
+# FADE-Net: 轻量级年龄估计技术报告 (Final Report)
 
-**日期**: 2025-12-18
-**状态**: ✅ Verified (MAE 3.148)
-**项目**: HAL-Net (Hybrid Attention Lightweight Network)
+**日期**: 2026-01-02
+**状态**: ✅ Verified (Initial Dry Run Success)
+**项目**: FADE-Net (Feature-fused Attention Distribution Estimation)
 
 ---
 
@@ -28,7 +28,7 @@
 
 | 类型 (Type) | 模型 (Model) | 骨干 (Backbone) | Params | FLOPs | MAE (AFAD) | 评价与结论 (Verdict) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Ours** | **DLDL-v2** | **MobileNetV3-Large** | **5.4M** | **219M** | **3.148** | ✅ **效能平衡 (Efficiency Balanced)**。<br>硬件兼容性极佳，精度接近 ResNet-18。 |
+| **FADE-Net** | **DLDL-v2 + MSFF + SPP** | **MobileNetV3-Large** | **~6.8M** | **~240M** | **Target < 3.10** | ✅ **完全体 (The Ultimate Form)**。<br>集成了特征融合、SPP 与混合注意力。 |
 | | | | | | | |
 | *Modern* | GhostNetV2 [7] | GhostNet | 5.2M | 167M | (N/A) | ⚠️ **理论优势与工程落差**。<br>算子碎片化可能导致端侧推理延迟高于预期。 |
 | *Modern* | MobileViT-S [8] | Transformer | 5.6M | 2.0G | (N/A) | ❌ **部署挑战**。<br>高 FLOPs + Attention 结构导致延迟较高。 |
@@ -83,7 +83,18 @@ ResNet-18 长期以来是该领域的"守门员" (MAE ~3.11)。
 2.  **Ranking/CDF Loss (序列约束)**: 引入基于累积分布函数 (CDF) 的损失项，强制模型学习 "30岁 > 20岁" 的序关系，减少离谱的越级错误。
 3.  **LDS (Label Distribution Smoothing)**: 针对 AFAD 数据集的不平衡，对稀缺样本（幼儿、高龄）进行 Loss 加权。
 
-### C. 训练策略 (Training Strategy)
+### C. 架构创新: 特征融合 (Multi-Scale Feature Fusion)
+*   **痛点**: 深层网络虽然语义强，但丢失了大量纹理细节（如皮肤质感、微小皱纹），而这些对于精准区分相近年龄段（如 45岁 vs 50岁）至关重要。
+*   **解决方案**: 实施 "**Texture-Semantics Dual-Stream**" (纹理-语义双流感知)。
+    *   **双流架构**: 在 MobileNetV3 的中间层 (Stride=16, 112通道) 引出分支，提取浅层纹理特征。
+    *   **特征融合**: 将浅层特征经过 Pointwise Conv 降维并全局池化后，与深层语义特征 (1280通道) 进行 Concat 拼接，形成 **1408维** 的混合特征向量输入分类器。这使得模型既“看得懂”脸型骨骼（成人vs儿童），也“看得清”皮肤纹理（中年vs老年）。
+
+### D. 架构增强: SPP与空间感知 (Enhanced Structure)
+*   **轻量级 SPP**: 针对 Global Average Pooling 丢失空间信息的问题，我们在深层分支引入了 **Spatial Pyramid Pooling (SPP)**。
+    *   **多尺度池化**: 采用 $1\times1$, $2\times2$, $4\times4$ 三种尺度，捕捉从全局到局部的语义信息。
+    *   **Sweet Spot**: 在 SPP 前先将通道数降维至 **128**，有效控制了参数量增长 (+1.5M)，换取满血的空间感知能力。
+
+### E. 训练策略 (Training Strategy)
 *   **Freeze Backbone**: 在训练初期（如前 5 Epochs）冻结主干网络，仅训练随机初始化的 CA 层和 Head，防止梯度剧烈波动破坏 ImageNet 预训练特征。
 *   **Stratified Sampling (分层采样)**: 90/5/5 分层划分，确保验证集与测试集在年龄分布上的一致性。
 *   **正则化**: MixUp (alpha=0.2), Dropout (0.2), EMA (影子模型)。

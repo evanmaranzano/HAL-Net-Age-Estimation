@@ -1,8 +1,35 @@
 import torch
 
 class Config:
-    # 基础配置
-    project_name = "HAL-Net_Age_Estimation" # Previously: MobileNetV3_Age_DLDL_AFAD_AAF_Nodes
+    def __init__(self):
+        # 基础名称
+        base_name = "FADE-Net"
+        
+        # 动态后缀生成
+        suffixes = []
+        if getattr(self, 'use_hybrid_attention', True):
+            suffixes.append("HA")
+        if getattr(self, 'use_dldl_v2', True):
+            suffixes.append("DLDL")
+        if getattr(self, 'use_multi_scale', True):
+            suffixes.append("MSFF")
+        if getattr(self, 'use_spp', True):
+            suffixes.append("SPP")
+            
+        if not suffixes:
+            suffixes.append("Baseline")
+            
+        # 组合最终名称
+        self.project_name = f"{base_name}_{'_'.join(suffixes)}"
+        
+    # 基础配置 (Class Attributes to be overridden by instance attributes if needed, 
+    # but since we use cfg = Config(), we can access instance attrs)
+    
+    # ⚠️ 注意: 下面的属性是类属性。在 __init__ 中我们定义了实例属性 project_name。
+    # Python 实例访问属性时，如果实例字典里有，就优先用实例的。
+    # 所以这没问题。
+    
+    # project_name = "HAL-Net_Age_Estimation" # 移至 __init__ 动态生成
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # 数据路径 (已移除 UTKFace)
@@ -57,3 +84,9 @@ class Config:
     # EMA
     use_ema = True             
     ema_decay = 0.999
+
+    # 🔬 Ablation Switch (消融实验开关)
+    use_hybrid_attention = True  # True=HAL-Net (CA), False=Baseline (SE)
+    use_dldl_v2 = True           # True=Adaptive Sigma + Rank Loss, False=Standard DLDL
+    use_multi_scale = True       # True=Feature Fusion (Texture Boost), False=Single Stream
+    use_spp = True               # True=Spatial Pyramid Pooling (1x1, 2x2, 4x4), False=GAP

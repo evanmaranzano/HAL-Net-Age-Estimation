@@ -79,8 +79,11 @@ def train():
     # 打印分布信息
     print(f"Dataset Size: Train={len(train_loader.dataset)}, Val={len(val_loader.dataset)}, Test={len(test_loader.dataset)}")
     
-    # 2. 初始化模型
-    model = LightweightAgeEstimator(num_classes=cfg.num_classes, dropout=cfg.dropout).to(cfg.device)
+    # 1. 定义模型
+    # model = LightweightAgeEstimator(num_classes=cfg.num_classes, dropout=cfg.dropout)
+    # Updated for Ablation Support: Pass entire config
+    model = LightweightAgeEstimator(cfg)
+    model.to(cfg.device)
     
     # 3. 初始化 EMA
     ema = None
