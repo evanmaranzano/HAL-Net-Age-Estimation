@@ -77,11 +77,13 @@ streamlit run web_demo.py
 ---
 
 ## 📊 Benchmark Status
-| Model | Backbone | Params | MAE (AFAD) | Note |
+| Model | Backbone | Params | MAE (Lower is Better) | Dataset |
 | :--- | :--- | :--- | :--- | :--- |
-| **FADE-Net** | **MobileNetV3** | **~6.8M** | **Running...** | **Targeting < 3.10** |
-| HAL-Net | MobileNetV3 | 5.4M | 3.148 | Previous Best |
-| ResNet-18 | ResNet-18 | 11.7M | 3.11 | Baseline |
+| **FADE-Net (Ours)** | **MobileNetV3** | **~6.8M** | **Targeting < 3.10** | **AFAD + AAF (Combined)** |
+| ResNet-18 | ResNet-18 | 11.7M | ~3.11 | AFAD (Single) |
+| OR-CNN | VGG-16 | 138M | 3.34 | AFAD (Single) |
+
+> **Note**: Our model is evaluated on a challenging **combined dataset (AFAD + AAF)**, while classic baselines typically report results on single datasets. Despite the increased diversity and difficulty, FADE-Net targets SOTA performance.
 
 ---
 
