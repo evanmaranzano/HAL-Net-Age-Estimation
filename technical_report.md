@@ -1,4 +1,4 @@
-# FADE-Net: 轻量级年龄估计技术报告 (Final Report)
+# FADE-Net: A Feature-fused Hybrid Attention Distribution Estimation Network for Lightweight Age Sensing
 
 **日期**: 2026-01-02
 **状态**: ✅ Verified (Initial Dry Run Success)

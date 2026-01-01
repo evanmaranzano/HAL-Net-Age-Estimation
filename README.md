@@ -1,4 +1,4 @@
-# FADE-Net: Feature-fused Attention Distribution Estimation Network
+# FADE-Net: A Feature-fused Hybrid Attention Distribution Estimation Network for Lightweight Age Sensing
 
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg?style=flat-square&logo=PyTorch&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)
