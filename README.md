@@ -1,4 +1,4 @@
-# HAL-Net: Hybrid Attention Lightweight Age Estimation
+# FADE-Net: Feature-fused Attention Distribution Estimation Network
 
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg?style=flat-square&logo=PyTorch&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)
@@ -6,37 +6,40 @@
 
 ## 📖 Project Overview (项目概述)
 
-This project implements **HAL-Net** (Hybrid Attention Lightweight Network), a high-performance age estimation system optimized for edge devices. It achieves state-of-the-art (SOTA) level accuracy on the **AFAD** and **AAF** datasets using **MobileNetV3-Large** combined with **Coordinate Attention**, **Deep Label Distribution Learning (DLDL-v2)** and strict **Stratified Sampling**.
+**FADE-Net** (formerly HAL-Net) is the ultimate evolution of our lightweight age estimation system. It integrates **Multi-Scale Feature Fusion**, **Spatial Pyramid Pooling**, and **Hybrid Attention** to achieve "Server-level Accuracy on Edge Devices".
 
-**Key Performance Indicators:**
-*   **MAE**: **3.1480** (Test SOTA Competitive)
-*   **Inference Speed**: **122 FPS** (RTX 3060), **59 FPS** (Ryzen 9 CPU)
-*   **Parameters**: ~5.4M
-*   **FLOPs**: ~219M
+**The Name "FADE":**
+*   **F**eature-fused (Texture + Semantic Dual Stream)
+*   **A**ttention-guided (Pyramid Coordinate Attention)
+*   **D**istribution (Adaptive Sigma DLDL-v2)
+*   **E**nhanced Structure (SPP + Stratified Split)
+
+**Target Performance:**
+*   **MAE**: **< 3.10** (Targeting SOTA on AFAD)
+*   **Params**: ~6.8M (Lightweight)
+*   **Speed**: Real-time on CPU/GPU
 
 ---
 
 ## ✨ Key Features (核心特性)
 
-1.  **Lightweight Backbone**: Built on `MobileNetV3-Large` for optimal speed/accuracy trade-off.
-2.  **Hybrid Attention (New)**: Incorporates **Coordinate Attention (CA)** in deep layers (Stage 4-5) to capture spatial aging features (wrinkles, face shape) while keeping shallow layers efficient.
-3.  **DLDL-v2 (Deep Label Distribution Learning)**: Enhanced DLDL with **Adaptive Sigma**, **Ranking/CDF Loss**, and **LDS** (Label Distribution Smoothing) to handle label ambiguity and imbalance.
-4.  **Stratified Sampling**: Implements a rigorous `90/5/5` split based on age distribution to ensure validating on representative data.
-5.  **Freeze Training Strategy**: Protects pre-trained backbone features during the initial phase of training (Warm-up + Freeze).
-6.  **Advanced Reg**: Incorporates `MixUp` (alpha=0.2), `Dynamic Dropout`, and `EMA` (Exponential Moving Average) for robust generalization.
+1.  **Dual-Stream Architecture (New)**: Defines a "Texture Branch" (Stride-16) and "Semantic Branch" (Stride-32) to capture both fine wrinkles and facial shape.
+2.  **Spatial Pyramid Pooling (SPP) (New)**: Replaces global pooling with 1x1, 2x2, 4x4 adaptive pooling to preserve spatial layout information.
+3.  **Hybrid Attention**: Injecting **Coordinate Attention (CA)** into deep layers to enhance spatial awareness without heavy computation.
+4.  **DLDL-v2**: Adaptive Label Distribution Learning with **Ranking Loss** and **LDS** (Label Distribution Smoothing) to handle label ambiguity.
+5.  **Pre-training**: Uses **ImageNet1K V2** weights (Top-1 75.2%) for robust initialization.
 
 ---
 
 ## 📂 Project Structure (目录结构)
 
 ```text
-├── config.py             # [Core] Global configuration (Hyperparams, Paths)
-├── model.py              # [Core] Model architecture definition (MBV3 + Custom Head)
-├── dataset.py            # [Data] Dataset class, Loading, and Stratified Splitting
-├── train.py              # [Main] Training loop, Validation, Checkpointing
-├── utils.py              # [Utils] Loss functions (KL+L1+Rank), DLDL logic, EMA
-├── benchmark_speed.py    # [Tools] Interface speed benchmarking (FPS/Latency)
-├── plot_results.py       # [Tools] Generate training visualization plots
+├── config.py             # [Core] Global configuration (Hyperparams, Ablation Flags)
+├── model.py              # [Core] FADE-Net architecture (Backbone + SPP + Fusion)
+├── dataset.py            # [Data] Dataset class & Stratified Splitting
+├── train.py              # [Main] Training loop with Freeze Strategy
+├── utils.py              # [Utils] DLDL-v2 Loss, EMA, Metrics
+├── technical_report.md   # [Docs] Detailed Technical Report
 └── README.md             # Project documentation
 ```
 
@@ -49,67 +52,38 @@ This project implements **HAL-Net** (Hybrid Attention Lightweight Network), a hi
 pip install torch torchvision numpy pandas tqdm tensorboard matplotlib scipy
 ```
 
-### 2. Configure Paths
-Verify your dataset paths in `config.py`:
-```python
-# config.py
-self.afad_dir = "./data_aligned/AFAD"
-self.aaf_dir = "./data_aligned/AAF"
+### 2. Training (训练)
+Run the full training pipeline (SOTA configuration):
+```bash
+python train.py --epochs 120 --freeze_backbone_epochs 5
 ```
+*   **Checkpoints**: Saved in `checkpoints/`
+*   **Logs**: Saved in `runs/FADE-Net_...` (Auto-named based on active modules)
 
-### 2.5. Data Preprocessing (数据预处理)
-Use `preprocess.py` to align faces and perform stratified splitting:
+### 3. Evaluation
 ```bash
-python preprocess.py
-```
-*   **Align Faces**: Detects and aligns faces from source datasets (AFAD/AAF).
-*   **Stratified Split**: Generates `dataset_split_stratified.json` with 90/5/5 ratio.
-
-### 3. Training (训练)
-Start the training process with SOTA presets:
-```bash
-python train.py
-```
-*   **Outputs**:
-    *   `best_model.pth`: Model with lowest Val MAE.
-    *   `training_log.csv`: Detailed epoch-wise metrics.
-    *   `runs/`: TensorBoard logs.
-
-### 4. Evaluation & Visualization (评估与可视化)
-Generate performance plots (Loss, MAE, LR Schedule):
-```bash
-python plot_results.py
-```
-Run hardware benchmark:
-```bash
-python benchmark_speed.py
+python plot_results.py    # Generate visualization
+python benchmark_speed.py # Test FPS
 ```
 
 ---
 
 ## 💻 Web Demo (可视化演示)
-
-Run the interactive web interface for age estimation:
+Interactive web interface for real-time age estimation:
 ```bash
 streamlit run web_demo.py
 ```
-**Features:**
-*   **Single Image Analysis**: Upload or take a snapshot to estimate age with uncertainty plots.
-*   **Batch Processing**: Process multiple images at once and export results to CSV.
-*   **Real-time Video**: Live age estimation from webcam feed.
 
 ---
 
-## 📊 Benchmark Results (AFAD Dataset)
-
-| Model | Backbone | Params | MAE (Lower is Better) |
-| :--- | :--- | :--- | :--- |
-| **Ours** | **MobileNetV3** | **5.4M** | **3.1480** |
-| ResNet-18 | ResNet-18 | 11.7M | ~3.11 |
-| GhostNet | GhostNet | 5.2M | N/A (Theoretical) |
-| OR-CNN | VGG-16 | 138M | 3.34 |
+## 📊 Benchmark Status
+| Model | Backbone | Params | MAE (AFAD) | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| **FADE-Net** | **MobileNetV3** | **~6.8M** | **Running...** | **Targeting < 3.10** |
+| HAL-Net | MobileNetV3 | 5.4M | 3.148 | Previous Best |
+| ResNet-18 | ResNet-18 | 11.7M | 3.11 | Baseline |
 
 ---
 
 ## 📝 License
-This project is open-source and available under the MIT License.
+MIT License.
