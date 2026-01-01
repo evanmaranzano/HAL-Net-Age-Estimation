@@ -2,7 +2,6 @@ import torch
 
 class Config:
     # 基础配置
-    # 基础配置
     project_name = "HAL-Net_Age_Estimation" # Previously: MobileNetV3_Age_DLDL_AFAD_AAF_Nodes
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

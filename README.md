@@ -6,7 +6,7 @@
 
 ## 📖 Project Overview (项目概述)
 
-This project implements **HAL-Net** (Hybrid Attention Lightweight Network), a high-performance age estimation system optimized for edge devices. It achieves state-of-the-art (SOTA) level accuracy on the AFAD dataset using **MobileNetV3-Large** combined with **Coordinate Attention**, **Deep Label Distribution Learning (DLDL-v2)** and strict **Stratified Sampling**.
+This project implements **HAL-Net** (Hybrid Attention Lightweight Network), a high-performance age estimation system optimized for edge devices. It achieves state-of-the-art (SOTA) level accuracy on the **AFAD** and **AAF** datasets using **MobileNetV3-Large** combined with **Coordinate Attention**, **Deep Label Distribution Learning (DLDL-v2)** and strict **Stratified Sampling**.
 
 **Key Performance Indicators:**
 *   **MAE**: **3.1480** (Test SOTA Competitive)
