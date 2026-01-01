@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data
+data/
+data_aligned/
+*.zip
+*.tar.gz
+
+# Models & Logs
+*.pth
+runs/
+training_log.csv
+batch_log.csv
+.gemini/
+backup/
+backup_script.ps1
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,288 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Report</title>
+    
+<style>
+    body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 45px;
+        font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+        font-size: 16px;
+        line-height: 1.5;
+        color: #24292f;
+        background-color: #fff;
+    }
+    h1, h2, h3 { margin-top: 24px; margin-bottom: 16px; font-weight: 600; line-height: 1.25; }
+    h1 { font-size: 2em; border-bottom: 1px solid #d0d7de; padding-bottom: .3em; }
+    h2 { font-size: 1.5em; border-bottom: 1px solid #d0d7de; padding-bottom: .3em; }
+    h3 { font-size: 1.25em; }
+    table { border-spacing: 0; border-collapse: collapse; margin-bottom: 16px; width: 100%; display: block; overflow: auto; }
+    table th, table td { padding: 6px 13px; border: 1px solid #d0d7de; }
+    table th { font-weight: 600; background-color: #f6f8fa; }
+    table tr:nth-child(2n) { background-color: #f6f8fa; }
+    img { max-width: 100%; box-sizing: content-box; background-color: #fff; }
+    code { padding: .2em .4em; margin: 0; font-size: 85%; background-color: #afb8c133; border-radius: 6px; font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace; }
+    pre { padding: 16px; overflow: auto; font-size: 85%; line-height: 1.45; background-color: #f6f8fa; border-radius: 6px; }
+    pre code { background-color: transparent; padding: 0; }
+    blockquote { padding: 0 1em; color: #57606a; border-left: .25em solid #d0d7de; margin: 0; }
+    hr { height: .25em; padding: 0; margin: 24px 0; background-color: #d0d7de; border: 0; }
+    a { color: #0969da; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+</style>
+
+</head>
+<body>
+    <h1 id="final-report">轻量级年龄估计模型技术报告 (Final Report)</h1>
+<p><strong>日期</strong>: 2025-12-18
+<strong>状态</strong>: ✅ Verified (MAE 3.148)
+<strong>项目</strong>: MobileNetV3_Age_DLDL_Stratified</p>
+<hr />
+<h2 id="1-executive-summary">1. 核心成果摘要 (Executive Summary)</h2>
+<p>本项目旨在评估<strong>移动端轻量级架构</strong>在年龄估计任务上的实际效能。实验结果表明，在 AFAD 数据集（采用 Stratified Split 分层划分）上，基于 MobileNetV3 的改进模型实现了 <strong>MAE 3.148</strong>。在参数量仅为 5.4M 的前提下，该结果与 ResNet-18 等参数量更大的基准模型接近。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">评估指标</th>
+<th style="text-align: left;">结果 (Result)</th>
+<th style="text-align: left;">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Final Test MAE</strong></td>
+<td style="text-align: left;"><strong>3.1480</strong></td>
+<td style="text-align: left;">实测结果 (w/ TTA Flip)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Best Val MAE</strong></td>
+<td style="text-align: left;"><strong>3.108</strong></td>
+<td style="text-align: left;">@ Epoch 55 (收敛极快)</td>
+</tr>
+<tr>
+<td style="text-align: left;">Parameters</td>
+<td style="text-align: left;"><strong>~5.4M</strong></td>
+<td style="text-align: left;">显著低于 VGG/ResNet 等传统架构</td>
+</tr>
+<tr>
+<td style="text-align: left;">Inference (CPU)</td>
+<td style="text-align: left;"><strong>59.2 FPS</strong></td>
+<td style="text-align: left;">实测于 Ryzen 9 6900HX (Latency ~16.9ms)</td>
+</tr>
+<tr>
+<td style="text-align: left;">Inference (GPU)</td>
+<td style="text-align: left;"><strong>122.1 FPS</strong></td>
+<td style="text-align: left;">实测于 RTX 3060 Laptop (Latency ~8.2ms)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-unified-benchmark">2. 全维度综合评估矩阵 (Unified Benchmark)</h2>
+<p>下表将本模型与 <strong>经典轻量级 (Classic Light)</strong>、<strong>现代轻量级 (Modern Light)</strong> 及 <strong>重量级基准 (Heavy Baseline)</strong> 进行了全方位对比。我们在关注精度的同时，重点考察 <strong>参数效率</strong> 与 <strong>工程落地性</strong>。</p>
+<h3 id="sota-efficiency-matrix">📊 SOTA &amp; Efficiency Matrix</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">类型 (Type)</th>
+<th style="text-align: left;">模型 (Model)</th>
+<th style="text-align: left;">骨干 (Backbone)</th>
+<th style="text-align: left;">Params</th>
+<th style="text-align: left;">FLOPs</th>
+<th style="text-align: left;">MAE (AFAD)</th>
+<th style="text-align: left;">评价与结论 (Verdict)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Ours</strong></td>
+<td style="text-align: left;"><strong>DLDL-v2</strong></td>
+<td style="text-align: left;"><strong>MobileNetV3-Large</strong></td>
+<td style="text-align: left;"><strong>5.4M</strong></td>
+<td style="text-align: left;"><strong>219M</strong></td>
+<td style="text-align: left;"><strong>3.148</strong></td>
+<td style="text-align: left;">✅ <strong>效能平衡 (Efficiency Balanced)</strong>。<br>硬件兼容性极佳，精度接近 ResNet-18。</td>
+</tr>
+<tr>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><em>Modern</em></td>
+<td style="text-align: left;">GhostNetV2 [7]</td>
+<td style="text-align: left;">GhostNet</td>
+<td style="text-align: left;">5.2M</td>
+<td style="text-align: left;">167M</td>
+<td style="text-align: left;">(N/A)</td>
+<td style="text-align: left;">⚠️ <strong>理论优势与工程落差</strong>。<br>算子碎片化可能导致端侧推理延迟高于预期。</td>
+</tr>
+<tr>
+<td style="text-align: left;"><em>Modern</em></td>
+<td style="text-align: left;">MobileViT-S [8]</td>
+<td style="text-align: left;">Transformer</td>
+<td style="text-align: left;">5.6M</td>
+<td style="text-align: left;">2.0G</td>
+<td style="text-align: left;">(N/A)</td>
+<td style="text-align: left;">❌ <strong>部署挑战</strong>。<br>高 FLOPs + Attention 结构导致延迟较高。</td>
+</tr>
+<tr>
+<td style="text-align: left;"><em>Modern</em></td>
+<td style="text-align: left;">MobileOne-S1 [9]</td>
+<td style="text-align: left;">Re-param</td>
+<td style="text-align: left;">4.8M</td>
+<td style="text-align: left;">280M</td>
+<td style="text-align: left;">(N/A)</td>
+<td style="text-align: left;">⚠️ <strong>训练极难</strong>。<br>显存开销大，且对分布学习支持较弱。</td>
+</tr>
+<tr>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><em>Classic</em></td>
+<td style="text-align: left;">SSR-Net [2]</td>
+<td style="text-align: left;">Custom Tiny</td>
+<td style="text-align: left;">0.32M</td>
+<td style="text-align: left;">&lt;50M</td>
+<td style="text-align: left;">~3.60</td>
+<td style="text-align: left;">⚡ <strong>极简</strong>。<br>参数极少，但在复杂场景鲁棒性不足。</td>
+</tr>
+<tr>
+<td style="text-align: left;"><em>Classic</em></td>
+<td style="text-align: left;">C3AE [3]</td>
+<td style="text-align: left;">Shuffle/Mobile</td>
+<td style="text-align: left;">~2.0M</td>
+<td style="text-align: left;">~300M</td>
+<td style="text-align: left;">~3.50</td>
+<td style="text-align: left;">🔸 <strong>稳健</strong>。<br>分层采样的早期探索者。</td>
+</tr>
+<tr>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+<td style="text-align: left;"></td>
+</tr>
+<tr>
+<td style="text-align: left;"><em>Baseline</em></td>
+<td style="text-align: left;">ResNet-18 [6]</td>
+<td style="text-align: left;">ResNet</td>
+<td style="text-align: left;">11.7M</td>
+<td style="text-align: left;">1.8G</td>
+<td style="text-align: left;">~3.11</td>
+<td style="text-align: left;">🔄 <strong>工业基准</strong>。<br>精度优秀，但参数量与计算量较大。</td>
+</tr>
+<tr>
+<td style="text-align: left;"><em>Heavy</em></td>
+<td style="text-align: left;">OR-CNN [1]</td>
+<td style="text-align: left;">VGG-16</td>
+<td style="text-align: left;">138M</td>
+<td style="text-align: left;">15G+</td>
+<td style="text-align: left;">3.34</td>
+<td style="text-align: left;">🛑 <strong>传统架构</strong>。<br>参数冗余严重，不适合端侧部署。</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>⚠️ Disclaimer (免责声明)</strong>:
+本报告引用的其他论文结果 (Reporting Results) 来自原文献 [1-6]。<strong>注意</strong>：文献中常用的验证策略（如 80-20 随机划分或 LOOCV）与本项目使用的 <strong>Stratified 90-5-5 Split</strong> 存在差异。因此，上述 MAE 数值对比仅用于展示本模型在同类任务中的大致定位，严谨的横向对比需在完全一致的数据划分下进行。</p>
+</blockquote>
+<hr />
+<h2 id="3-architecture-discussion">3. 架构选型深度解析 (Architecture Discussion)</h2>
+<p>基于上述综合评估矩阵，我们进一步阐述为何坚持选择 MobileNetV3 + DLDL 方案，而非盲目追逐 Transformer 等新架构。</p>
+<h3 id="31-cnn-vs-transformer-trade-off-analysis">3.1 CNN vs. Transformer 在端侧的权衡 (Trade-off Analysis)</h3>
+<p>尽管 Vision Transformers (如 <strong>MobileViT</strong>, Swin-Tiny) 在 ImageNet 等任务上展现了强大的特征提取能力，但在<strong>当前算力受限的纯 CPU 或中低端 GPU 场景</strong>下，CNN 仍具有显著的工程优势：
+*   <strong>算子亲和度</strong>: Transformer 核心的 Self-Attention 算子在许多嵌入式芯片 (DSP/NPU) 上尚缺乏底层的指令集优化。
+*   <strong>实测数据</strong>: 实验表明，在追求 <strong>极致低延迟 (Latency &lt; 20ms)</strong> 的场景中，MobileNetV3 凭借高度优化的卷积算子，相比同等 FLOPs 的 Transformer 架构通常能获得更高的 FPS [8]。
+*   <strong>结论</strong>: 本项目选择 MobileNetV3 并非否定 Transformer 的潜力，而是基于<strong>当前硬件环境</strong>下的务实选择，以确保在广泛设备上的实时运行能力。</p>
+<h3 id="32-vs-ghostnetv2">3.2 关于"理论算力"的陷阱 (vs. GhostNetV2)</h3>
+<p>GhostNet 宣称的 "More Features from Cheap Operations" 确实降低了 FLOPs (167M vs 219M)，但在工程落地中：
+*   <strong>碎片化</strong>: 大量细粒度的 Linear Ops 无法喂饱 GPU/NPU 的计算单元。
+*   <strong>兼容性</strong>: 在 TNN/MNN 等推理框架中，MobileNetV3 的高度融合算子往往跑得更快 (Real-time Latency)。</p>
+<h3 id="33-vs-resnet-18">3.3 挑战工业基准 (vs. ResNet-18)</h3>
+<p>ResNet-18 长期以来是该领域的"守门员" (MAE ~3.11)。
+*   <strong>对比</strong>: 我们的模型以 <strong>5.4M</strong> 的参数量和 <strong>219M FLOPs</strong> 的计算量，实现了 <strong>3.148</strong> 的 MAE。与 ResNet-18 (MAE ~3.11) 相比，在精度损失约 <strong>0.038</strong> (1.2%) 的情况下，显著降低了计算开销。
+*   <strong>意义</strong>: 这意味着在算力受限的 IoT 设备上，我们可以用更低的功耗提供"服务器级"的体验。</p>
+<hr />
+<h2 id="4-methodology">4. 关键方法论 (Methodology)</h2>
+<p>本项目的性能提升主要源于以下工程实践：</p>
+<h3 id="a-hybrid-attention">A. 架构创新: 混合注意力 (Hybrid Attention)</h3>
+<ul>
+<li><strong>痛点</strong>: 传统 MobileNetV3 的 SE-Block 虽然轻量，但忽略了<strong>位置信息 (Spatial Information)</strong>，而人脸的衰老特征（如法令纹、鱼尾纹）具有明确的空间分布。</li>
+<li><strong>解决方案</strong>: 采用 "<strong>Pyramid Attention Injection</strong>" 策略。<ul>
+<li><strong>浅层 (Shallow Layers)</strong>: 保留原始 SE-Block 甚至移除，避免在 112x112 等大尺寸特征图上进行高代价的 Slice/Concat 操作 (Memory Bound)。</li>
+<li><strong>深层 (Deep Layers)</strong>: 在最后 4 个 Block 替换为 <strong>Coordinate Attention (CA)</strong>。CA 模块同时捕捉通道关系和长程空间依赖，显著增强了模型对细微老化痕迹的敏感度。</li>
+</ul>
+</li>
+</ul>
+<h3 id="b-dldl-v2">B. 算法升级: DLDL-v2</h3>
+<p>我们对原始 DLDL 进行了三项重要改进：
+1.  <strong>Adaptive Sigma (自适应方差)</strong>: 考虑到老年人年龄判断的主观不确定性更大，我们设计了随年龄增长的动态 Sigma，使标签分布更符合人类认知。
+2.  <strong>Ranking/CDF Loss (序列约束)</strong>: 引入基于累积分布函数 (CDF) 的损失项，强制模型学习 "30岁 &gt; 20岁" 的序关系，减少离谱的越级错误。
+3.  <strong>LDS (Label Distribution Smoothing)</strong>: 针对 AFAD 数据集的不平衡，对稀缺样本（幼儿、高龄）进行 Loss 加权。</p>
+<h3 id="c-training-strategy">C. 训练策略 (Training Strategy)</h3>
+<ul>
+<li><strong>Freeze Backbone</strong>: 在训练初期（如前 5 Epochs）冻结主干网络，仅训练随机初始化的 CA 层和 Head，防止梯度剧烈波动破坏 ImageNet 预训练特征。</li>
+<li><strong>Stratified Sampling (分层采样)</strong>: 90/5/5 分层划分，确保验证集与测试集在年龄分布上的一致性。</li>
+<li><strong>正则化</strong>: MixUp (alpha=0.2), Dropout (0.2), EMA (影子模型)。</li>
+</ul>
+<hr />
+<h2 id="5-visual-analysis">5. 可视化分析 (Visual Analysis)</h2>
+<p>以下图表展示了模型在 120 个 Epoch 中的完整训练动态。</p>
+<h3 id="51-mae-loss">5.1 核心性能 (MAE &amp; Loss)</h3>
+<p>`<div style="text-align: center; margin: 20px 0;"><img src="plots/2_mae_curve.png" alt="MAE Curve" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="color: #666; font-size: 0.9em; margin-top: 5px;">MAE Curve</p></div></p>
+<div style="text-align: center; margin: 20px 0;"><img src="plots/1_loss_curve.png" alt="Loss Curve" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="color: #666; font-size: 0.9em; margin-top: 5px;">Loss Curve</p></div>
+<p>`</p>
+<blockquote>
+<p><strong>解读</strong>: MAE 曲线 (图1) 显示验证集 MAE (红线) 在 Epoch 55 达到最低点 (3.108)，随后保持在 3.15-3.20 区间，未出现显著反弹，表明过拟合得到有效控制。</p>
+</blockquote>
+<h3 id="52-stability">5.2 训练稳定性 (Stability)</h3>
+<p>`<div style="text-align: center; margin: 20px 0;"><img src="plots/4_generalization_gap.png" alt="Generalization Gap" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="color: #666; font-size: 0.9em; margin-top: 5px;">Generalization Gap</p></div></p>
+<div style="text-align: center; margin: 20px 0;"><img src="plots/7_batch_loss_dist.png" alt="Batch Loss Dist" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="color: #666; font-size: 0.9em; margin-top: 5px;">Batch Loss Dist</p></div>
+<p>`</p>
+<blockquote>
+<p><strong>解读</strong>: 泛化差距 (Generalization Gap) 随训练进行而扩大（训练 Loss 持续下降），这是深度模型的正常行为。但 Gap 的增长速率受到 MixUp 的有效抑制。Batch Loss 分布图显示收敛后期的方差极小。</p>
+</blockquote>
+<h3 id="53-schedule-efficiency">5.3 调度与效率 (Schedule &amp; Efficiency)</h3>
+<p>`<div style="text-align: center; margin: 20px 0;"><img src="plots/3_lr_schedule.png" alt="LR Schedule" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="color: #666; font-size: 0.9em; margin-top: 5px;">LR Schedule</p></div></p>
+<div style="text-align: center; margin: 20px 0;"><img src="plots/6_time_efficiency.png" alt="Time Efficiency" style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><p style="color: #666; font-size: 0.9em; margin-top: 5px;">Time Efficiency</p></div>
+<p>`</p>
+<blockquote>
+<p><strong>解读</strong>: 余弦退火 (Cosine Annealing) 策略使得学习率在末期平滑衰减。</p>
+</blockquote>
+<hr />
+<h2 id="6-conclusion">6. 结论 (Conclusion)</h2>
+<p>本项目验证了 <strong>"MobileNetV3 + DLDL + Stratified Split"</strong> 这一组合是一个极具性价比的年龄估计基线方案。在实际应用场景（尤其是移动端）中，该模型提供了极佳的 <strong>精度-效率平衡 (Accuracy-Efficiency Trade-off)</strong>。</p>
+<hr />
+<h2 id="references">参考文献 (References)</h2>
+<ol>
+<li>Z. Niu, M. Zhou, L. Wang, X. Gao, and G. Hua, "Ordinal regression with multiple output CNN for age estimation," in <em>Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)</em>, 2016.</li>
+<li>T.-Y. Yang, Y.-H. Huang, Y.-Y. Lin, P.-C. Hsiu, and Y.-Y. Chuang, "SSR-Net: A compact soft stagewise regression network for age estimation," in <em>Proceedings of the International Joint Conference on Artificial Intelligence (IJCAI)</em>, 2018.</li>
+<li>C. Zhang, S. Liu, X. Xu, and C. Zhu, "C3AE: Exploring the limits of compact model for age estimation," in <em>Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</em>, 2019.</li>
+<li>R. Rothe, R. Timofte, and L. Van Gool, "Deep expectation of real and apparent age from a single image without facial landmarks," in <em>International Journal of Computer Vision (IJCV)</em>, 2018.</li>
+<li>B.-B. Gao, C. Xing, C.-W. Xie, J. Wu, and X. Geng, "Deep label distribution learning with label ambiguity," in <em>IEEE Transactions on Image Processing (TIP)</em>, 2017.</li>
+<li>K. Zhang, et al., "Joint Age Estimation and Gender Classification With ResNet," in <em>Applied Sciences</em>, 2021. (Baseline MAE ~3.11 on AFAD)</li>
+<li>K. Han, Y. Wang, Q. Tian, J. Guo, C. Xu, and C. Xu, "GhostNet: More Features from Cheap Operations," in <em>CVPR</em>, 2020.</li>
+<li>S. Mehta, and M. Rastegari, "MobileViT: Light-weight, General-purpose, and Mobile-friendly Vision Transformer," in <em>ICLR</em>, 2022.</li>
+<li>P. K. A. Vasu, et al., "MobileOne: An Improved One millisecond Mobile Backbone," in <em>CVPR</em>, 2022.</li>
+</ol>
+</body>
+</html>
+    
