@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)
 ![SOTA](https://img.shields.io/badge/SOTA-Competitive-success)
 
-## 📖 Project Overview (项目概述)
+## 📖 Project Overview
 
 **FADE-Net** (formerly HAL-Net) is the ultimate evolution of our lightweight age estimation system. It integrates **Multi-Scale Feature Fusion**, **Spatial Pyramid Pooling**, and **Hybrid Attention** to achieve "Server-level Accuracy on Edge Devices".
 
@@ -21,7 +21,7 @@
 
 ---
 
-## ✨ Key Features (核心特性)
+## ✨ Key Features
 
 1.  **Dual-Stream Architecture (New)**: Defines a "Texture Branch" (Stride-16) and "Semantic Branch" (Stride-32) to capture both fine wrinkles and facial shape.
 2.  **Spatial Pyramid Pooling (SPP) (New)**: Replaces global pooling with 1x1, 2x2, 4x4 adaptive pooling to preserve spatial layout information.
@@ -31,7 +31,7 @@
 
 ---
 
-## 📂 Project Structure (目录结构)
+## 📂 Project Structure
 
 ```text
 ├── config.py             # [Core] Global configuration (Hyperparams, Ablation Flags)
@@ -45,14 +45,14 @@
 
 ---
 
-## 🚀 Getting Started (快速开始)
+## 🚀 Getting Started
 
 ### 1. Requirements
 ```bash
 pip install torch torchvision numpy pandas tqdm tensorboard matplotlib scipy
 ```
 
-### 2. Training (训练)
+### 2. Training
 Run the full training pipeline (SOTA configuration):
 ```bash
 python train.py --epochs 120 --freeze_backbone_epochs 5
@@ -68,7 +68,7 @@ python benchmark_speed.py # Test FPS
 
 ---
 
-## 💻 Web Demo (可视化演示)
+## 💻 Web Demo
 Interactive web interface for real-time age estimation:
 ```bash
 streamlit run web_demo.py
