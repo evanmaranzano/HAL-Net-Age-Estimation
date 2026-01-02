@@ -26,8 +26,9 @@
 1.  **Dual-Stream Architecture (New)**: Defines a "Texture Branch" (Stride-16) and "Semantic Branch" (Stride-32) to capture both fine wrinkles and facial shape.
 2.  **Spatial Pyramid Pooling (SPP) (New)**: Enhanced structural design with SPP and stratified splitting further improves representation efficiency.
 3.  **Hybrid Attention**: Injecting **Coordinate Attention (CA)** into deep layers to enhance spatial awareness without heavy computation.
-4.  **DLDL-v2**: Adaptive Label Distribution Learning with **Ranking Loss** and **LDS** (Label Distribution Smoothing) to handle label ambiguity.
-5.  **Pre-training**: Uses **ImageNet1K V2** weights (Top-1 75.2%) for robust initialization.
+4.  **DLDL-v2**: Adaptive Label Distribution Learning with **Ranking Loss (0.3)** and **Weighted L1**.
+5.  **Robust Training**: Random Erasing (p=0.5) + LDS Weight Clipping replaces Mixup for cleaner distribution learning.
+6.  **Pre-training**: Uses **ImageNet1K V2** weights (Top-1 75.2%) for robust initialization.
 
 ---
 

@@ -100,10 +100,18 @@ ResNet-18 长期以来是该领域的"守门员" (MAE ~3.11)。
 *   **正则化**: MixUp (alpha=0.2), Dropout (0.2), EMA (影子模型)。
 
 ### F. 超参数精调: 分布锐化 (Distribution Sharpening)
-为了进一步释放模型的精度潜力，我们在最终阶段实施了 "**Distribution Sharpening (DS)**" 策略：
-1.  **Adaptive Sigma 下探 (0.8)**: 将 Sigma 下限从 1.0 降至 0.8，允许模型对特征清晰的年轻样本表现出更高的“自信度”，减少系统性偏差。
-2.  **Rank Loss 降权 (0.45)**: 随着训练深入，序关系已基本确立。降低 Rank Loss 权重以减轻梯度约束，让模型专注于微调绝对年龄精度 (L1 Loss)。
-3.  **LDS 窗口收紧 (Sigma=3)**: 针对 AFAD 的尖峰分布，将平滑窗口从 5 收紧至 3，实现更精准的稀缺样本加权 (Precision Reweighting)。
+### F. 超参数精调: 黄金分割策略 (The Golden Mean Strategy)
+为了解决 "Distribution Consistency" 与 "Structural Constraint" 之间的潜在冲突，我们在最终阶段实施了严密的 **Golden Mean** 调优：
+
+1.  **Augmentation Shift (数据增强迁移)**:
+    *   **移除 Mixup**: 发现 Mixup 生成的线性插值标签会导致 DLDL 的单峰高斯分布失真 (Double-Peak Noise)。
+    *   **引入 Random Erasing**: 作为不改变标签分布的物理防御手段 (p=0.5)，有效防止过拟合。
+2.  **Loss Balance (损失平衡)**:
+    *   **Rank Weight (0.3)**: 设定为 **0.3** 的黄金点。既避免了 0.45 带来的梯度淹没 (Gradient Drowning)，又提供了足够的结构约束。
+    *   **Weighted L1**: 将 LDS 权重同时也应用在 L1 Loss 上，实现对稀缺样本的 "Precision-Guided" 优化。
+3.  **Safety Clip (安全截断)**: 
+    *   **LDS Clip**: 设置最大权重为 **10.0**，防止极端稀缺样本导致梯度爆炸。
+    *   **Sigma Reset**: 配合纯净输入，将 `sigma_min` 稳健回调至 **1.0**。
 
 ---
 

@@ -379,7 +379,13 @@ class CombinedLoss(nn.Module):
         # 3. L1 Loss (Auxiliary)
         probs = torch.exp(log_probs)
         pred_age = self.dldl.expectation_regression(probs)
-        l1 = F.l1_loss(pred_age, true_ages)
+        
+        if self.weights is not None:
+             # L1 Loss should also be re-weighted to focus on rare ages
+             l1_element = F.l1_loss(pred_age, true_ages, reduction='none')
+             l1 = (l1_element * batch_weights).mean()
+        else:
+             l1 = F.l1_loss(pred_age, true_ages)
         
         # 4. Rank Loss (CDF Loss / EMD)
         # 注意: OrderRegressionLoss 内部实现了 CDF MSE
