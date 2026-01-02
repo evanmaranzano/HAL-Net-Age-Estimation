@@ -201,7 +201,7 @@ class SubsetWithTransform(Dataset):
 # ==========================================
 # LDS Weights
 # ==========================================
-def calculate_lds_weights(ages, config, smoothing_sigma=5):
+def calculate_lds_weights(ages, config, smoothing_sigma=3):
     print("⚖️ Calculating LDS Weights...")
     age_counts = Counter(ages)
     hist = np.zeros(config.num_classes)
@@ -224,7 +224,10 @@ def calculate_lds_weights(ages, config, smoothing_sigma=5):
 def get_dataloaders(config):
     # Transforms
     train_transform = transforms.Compose([
-        transforms.RandomResizedCrop(config.img_size, scale=(0.8, 1.0)),
+        # V2 Training uses strong augs. We keep RRC but ensure strict 224 output.
+        # Scale 0.08-1.0 is standard ImageNet training, 0.8-1.0 is too conservative (weak aug).
+        # We will slightly widen range to 0.5-1.0 to prevent overfitting but keep facial structure intanct.
+        transforms.RandomResizedCrop(config.img_size, scale=(0.5, 1.0)), 
         transforms.RandomHorizontalFlip(),
         transforms.RandomRotation(15),
         transforms.ColorJitter(0.2, 0.2, 0.1, 0.1),
@@ -233,7 +236,8 @@ def get_dataloaders(config):
     ])
     
     val_transform = transforms.Compose([
-        transforms.Resize((config.img_size, config.img_size)),
+        transforms.Resize(232),
+        transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])

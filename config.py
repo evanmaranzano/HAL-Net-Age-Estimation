@@ -49,7 +49,7 @@ class Config:
 
     # 训练参数
     batch_size = 64
-    learning_rate = 0.001
+    learning_rate = 0.0003
     epochs = 120  
     
     # 优化参数
@@ -66,9 +66,9 @@ class Config:
     
     # DLDL & 采样策略
     use_adaptive_sigma = True  
-    sigma_min = 1.0 
+    sigma_min = 0.8 
     sigma_max = 3.5 
-    label_smoothing = 0.05 
+    label_smoothing = 0.0 
 
     # 训练策略 (Freeze)
     freeze_backbone_epochs = 5 # 前5个Epoch冻结骨干网络，只训练CA层和Head
@@ -77,7 +77,7 @@ class Config:
     use_alignment = False      
     
     lambda_l1 = 0.1            
-    lambda_rank = 0.5          
+    lambda_rank = 0.45          
     
     use_reweighting = True     # 需要 LDS 解决 25岁 vs 80岁 不平衡
     

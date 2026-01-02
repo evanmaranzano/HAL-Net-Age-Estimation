@@ -102,13 +102,16 @@ def train():
     )
     
     # 6. 调度器
-    scheduler = CosineAnnealingLR(optimizer, T_max=cfg.epochs, eta_min=cfg.learning_rate * 0.01)
+    # Accelerated Decay: Reach min_lr at Epoch 100, then stay low for 20 epochs (Stable Phase)
+    scheduler = CosineAnnealingLR(optimizer, T_max=100, eta_min=cfg.learning_rate * 0.01)
     
     # --- 断点续训逻辑 ---
     start_epoch = 0
     best_mae = float('inf')
     checkpoint_path = "last_checkpoint.pth"
-    best_model_path = "best_model.pth" # Define best model path
+    # Dynamic naming: best_model_FADE-Net_HA_DLDL_MSFF_SPP.pth
+    best_model_path = f"best_model_{cfg.project_name}.pth"
+    print(f"🎯 Target Checkpoint Name: {best_model_path}")
     resume_training = False
 
     if os.path.exists(checkpoint_path):
@@ -318,7 +321,11 @@ def train():
         writer.add_scalar('Epoch/Val_Loss', avg_val_loss, epoch + 1)
         writer.add_scalar('Epoch/Val_MAE', val_mae, epoch + 1)
         
-        scheduler.step()
+        if epoch < 100:
+            scheduler.step()
+        else:
+             # Maintain eta_min for Stable Phase (101-120)
+             pass
         
         # 保存断点
         checkpoint_dict = {
