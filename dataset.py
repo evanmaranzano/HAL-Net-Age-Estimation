@@ -218,6 +218,11 @@ def calculate_lds_weights(ages, config):
     weights = 1.0 / (smooth_hist + 1e-5)
     weights = weights / np.mean(weights)
     
+    # 🛡️ Safety Clip: 防止稀缺样本权重过大导致梯度爆炸
+    # Max weight 10.0 means rare samples can have 10x impact, but not 100x.
+    weights = np.clip(weights, 0.0, 10.0)
+    print(f"   -> Max Weight Clipped to: {np.max(weights):.2f}")
+    
     weights_tensor = torch.tensor(weights, dtype=torch.float32).to(config.device)
     print("✅ LDS Weights Ready.")
     return weights_tensor
@@ -227,7 +232,8 @@ def calculate_lds_weights(ages, config):
 # ==========================================
 def get_dataloaders(config):
     # Transforms
-    train_transform = transforms.Compose([
+    # Base Transforms list
+    train_transforms_list = [
         # V2 Training uses strong augs. We keep RRC but ensure strict 224 output.
         # Scale 0.08-1.0 is standard ImageNet training, 0.8-1.0 is too conservative (weak aug).
         # We will slightly widen range to 0.5-1.0 to prevent overfitting but keep facial structure intanct.
@@ -237,7 +243,14 @@ def get_dataloaders(config):
         transforms.ColorJitter(0.2, 0.2, 0.1, 0.1),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
+    ]
+    
+    # ✅ [Added] Random Erasing (Post-Tensor Augmentation)
+    if getattr(config, 'use_random_erasing', False):
+        print(f"🛡️ [Aug] Random Erasing: ENABLED (p={config.re_prob})")
+        train_transforms_list.append(transforms.RandomErasing(p=config.re_prob, scale=(0.02, 0.33), ratio=(0.3, 3.3)))
+    
+    train_transform = transforms.Compose(train_transforms_list)
     
     val_transform = transforms.Compose([
         transforms.Resize(232),

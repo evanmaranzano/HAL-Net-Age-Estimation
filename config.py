@@ -29,10 +29,10 @@ class Config:
     
     # DLDL-v2 动态微调参数
     use_adaptive_sigma = True
-    sigma_min = 0.8              # 📉 下调至 0.8
+    sigma_min = 1.0              #  Revert to 1.0 for stability (Mixup Removed)
     sigma_max = 3.5
     lambda_l1 = 0.1
-    lambda_rank = 0.45           # 📉 下调至 0.45
+    lambda_rank = 0.3            # ⚖️ Golden Mean (MobileNetV3 + No Mixup)
     
     # 训练/优化
     batch_size = 64
@@ -45,7 +45,12 @@ class Config:
     
     # 数据增强与正则化
     dropout = 0.2
-    use_mixup = True
+    use_mixup = False            # 🛑 Disabled to resolve DLDL/Rank Loss conflict
+    
+    # ✅ [Added] Random Erasing as Compensation
+    use_random_erasing = True
+    re_prob = 0.5
+    
     mixup_alpha = 0.2
     mixup_prob = 0.5
     
