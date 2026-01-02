@@ -201,8 +201,12 @@ class SubsetWithTransform(Dataset):
 # ==========================================
 # LDS Weights
 # ==========================================
-def calculate_lds_weights(ages, config, smoothing_sigma=3):
+def calculate_lds_weights(ages, config):
     print("⚖️ Calculating LDS Weights...")
+    # Use config.lds_sigma if available, else default to 3
+    sigma = getattr(config, 'lds_sigma', 3)
+    print(f"   -> Smoothing Window (Sigma): {sigma}")
+    
     age_counts = Counter(ages)
     hist = np.zeros(config.num_classes)
     for age, count in age_counts.items():
@@ -210,7 +214,7 @@ def calculate_lds_weights(ages, config, smoothing_sigma=3):
         if 0 <= idx < config.num_classes:
             hist[idx] = count
     
-    smooth_hist = gaussian_filter1d(hist, sigma=smoothing_sigma)
+    smooth_hist = gaussian_filter1d(hist, sigma=sigma)
     weights = 1.0 / (smooth_hist + 1e-5)
     weights = weights / np.mean(weights)
     
