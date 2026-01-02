@@ -260,6 +260,11 @@
 <li><strong>Stratified Sampling (分层采样)</strong>: 90/5/5 分层划分，确保验证集与测试集在年龄分布上的一致性。</li>
 <li><strong>正则化</strong>: MixUp (alpha=0.2), Dropout (0.2), EMA (影子模型)。</li>
 </ul>
+<h3 id="f-distribution-sharpening">F. 超参数精调: 分布锐化 (Distribution Sharpening)</h3>
+<p>为了进一步释放模型的精度潜力，我们在最终阶段实施了 "<strong>Distribution Sharpening (DS)</strong>" 策略：
+1.  <strong>Adaptive Sigma 下探 (0.8)</strong>: 将 Sigma 下限从 1.0 降至 0.8，允许模型对特征清晰的年轻样本表现出更高的“自信度”，减少系统性偏差。
+2.  <strong>Rank Loss 降权 (0.45)</strong>: 随着训练深入，序关系已基本确立。降低 Rank Loss 权重以减轻梯度约束，让模型专注于微调绝对年龄精度 (L1 Loss)。
+3.  <strong>LDS 窗口收紧 (Sigma=3)</strong>: 针对 AFAD 的尖峰分布，将平滑窗口从 5 收紧至 3，实现更精准的稀缺样本加权 (Precision Reweighting)。</p>
 <hr />
 <h2 id="5-visual-analysis">5. 可视化分析 (Visual Analysis)</h2>
 <p>以下图表展示了模型在 120 个 Epoch 中的完整训练动态。</p>

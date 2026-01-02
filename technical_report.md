@@ -99,6 +99,12 @@ ResNet-18 长期以来是该领域的"守门员" (MAE ~3.11)。
 *   **Stratified Sampling (分层采样)**: 90/5/5 分层划分，确保验证集与测试集在年龄分布上的一致性。
 *   **正则化**: MixUp (alpha=0.2), Dropout (0.2), EMA (影子模型)。
 
+### F. 超参数精调: 分布锐化 (Distribution Sharpening)
+为了进一步释放模型的精度潜力，我们在最终阶段实施了 "**Distribution Sharpening (DS)**" 策略：
+1.  **Adaptive Sigma 下探 (0.8)**: 将 Sigma 下限从 1.0 降至 0.8，允许模型对特征清晰的年轻样本表现出更高的“自信度”，减少系统性偏差。
+2.  **Rank Loss 降权 (0.45)**: 随着训练深入，序关系已基本确立。降低 Rank Loss 权重以减轻梯度约束，让模型专注于微调绝对年龄精度 (L1 Loss)。
+3.  **LDS 窗口收紧 (Sigma=3)**: 针对 AFAD 的尖峰分布，将平滑窗口从 5 收紧至 3，实现更精准的稀缺样本加权 (Precision Reweighting)。
+
 ---
 
 ## 5. 可视化分析 (Visual Analysis)
