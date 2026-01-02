@@ -12,7 +12,7 @@ def benchmark_device(device_name, num_iterations=1000, batch_size=1):
     # 1. Setup Model
     cfg = Config()
     device = torch.device(device_name)
-    model = LightweightAgeEstimator(num_classes=cfg.num_classes).to(device)
+    model = LightweightAgeEstimator(cfg).to(device)
     model.eval()
     
     # Enable cuDNN benchmark for GPU

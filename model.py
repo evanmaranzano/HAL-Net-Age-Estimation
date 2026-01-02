@@ -201,6 +201,10 @@ class LightweightAgeEstimator(nn.Module):
         else:
             print("ℹ️ [Model] SPP Strategy: DISABLED (Using Global Average Pooling)")
             # classifier_input_dim remains what was set by MSFF block
+            
+            # Fallback Projector for Non-SPP mode (960 -> 1280)
+            # Ensures dimension compatibility if MSFF expects 1280 or strictly matching previous logic
+            self.project_960_1280 = nn.Sequential(nn.Linear(960, 1280), nn.Hardswish())
 
         # 替换分类器
         # 我们不再使用 backbone.classifier 作为特征提取器的一部分
@@ -302,10 +306,7 @@ class LightweightAgeEstimator(nn.Module):
             # x_deep is 960.
             # We need a 960->1280 layer.
             # Let's just use a dedicated Linear layer for this case to stay safe.
-            if not hasattr(self, 'project_960_1280'):
-                 self.project_960_1280 = nn.Sequential(nn.Linear(960, 1280), nn.Hardswish())
-                 self.project_960_1280.to(x_deep.device) # risky dynamic init
-            
+            # Use the pre-initialized projector
             x_sem = self.project_960_1280(x_pool)
 
         # --- Fusion ---
