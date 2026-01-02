@@ -12,7 +12,7 @@
 *   **F**eature-fused (Texture + Semantic Dual Stream)
 *   **A**ttention-guided (Pyramid Coordinate Attention)
 *   **D**istribution (Adaptive Sigma DLDL-v2)
-*   **E**nhanced Structure (SPP + Stratified Split)
+*   **E**stimation (Robust Age Inference)
 
 **Target Performance:**
 *   **MAE**: **< 3.10** (Targeting SOTA on AFAD)
@@ -24,7 +24,7 @@
 ## ✨ Key Features
 
 1.  **Dual-Stream Architecture (New)**: Defines a "Texture Branch" (Stride-16) and "Semantic Branch" (Stride-32) to capture both fine wrinkles and facial shape.
-2.  **Spatial Pyramid Pooling (SPP) (New)**: Replaces global pooling with 1x1, 2x2, 4x4 adaptive pooling to preserve spatial layout information.
+2.  **Spatial Pyramid Pooling (SPP) (New)**: Enhanced structural design with SPP and stratified splitting further improves representation efficiency.
 3.  **Hybrid Attention**: Injecting **Coordinate Attention (CA)** into deep layers to enhance spatial awareness without heavy computation.
 4.  **DLDL-v2**: Adaptive Label Distribution Learning with **Ranking Loss** and **LDS** (Label Distribution Smoothing) to handle label ambiguity.
 5.  **Pre-training**: Uses **ImageNet1K V2** weights (Top-1 75.2%) for robust initialization.
