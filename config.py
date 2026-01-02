@@ -34,6 +34,10 @@ class Config:
     lambda_l1 = 0.1
     lambda_rank = 0.3            # ⚖️ Golden Mean (MobileNetV3 + No Mixup)
     
+    # Label-Level Perturbation (Sigma Jitter)
+    use_sigma_jitter = True
+    sigma_jitter = 0.2
+    
     # 训练/优化
     batch_size = 64
     learning_rate = 0.0003       # 保持 3e-4 (Optimizer Safety for V2 Weights)

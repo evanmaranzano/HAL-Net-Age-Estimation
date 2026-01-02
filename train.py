@@ -153,27 +153,34 @@ def train():
     # Only train CA modules and Head for the first few epochs
     freeze_epochs = getattr(cfg, 'freeze_backbone_epochs', 0)
     if freeze_epochs > 0:
-        print(f"❄️  Freeze Strategy Enabled: Backbone will be frozen for first {freeze_epochs} epochs.")
-        # Freeze all
-        for name, param in model.named_parameters():
-            param.requires_grad = False
+        if start_epoch < freeze_epochs:
+            print(f"❄️  Freeze Strategy Enabled: Backbone will be frozen for first {freeze_epochs} epochs.")
+            # Freeze all
+            for name, param in model.named_parameters():
+                param.requires_grad = False
+                
+            # Unfreeze classifier
+            for param in model.backbone.classifier.parameters():
+                param.requires_grad = True
+                
+            # Unfreeze CoordAtt layers (identified by class name or parameter name)
+            # Our CoordAtt modules are inside backbone.features...
+            # We can check specific naming or type.
+            # Since we modified model.py to inject CoordAtt (class names 'CoordAtt'), we can check modules.
+            count_unfrozen = 0
+            for name, module in model.named_modules():
+                if "CoordAtt" in str(type(module)):
+                    for param in module.parameters():
+                        param.requires_grad = True
+                        count_unfrozen += 1
             
-        # Unfreeze classifier
-        for param in model.backbone.classifier.parameters():
-            param.requires_grad = True
-            
-        # Unfreeze CoordAtt layers (identified by class name or parameter name)
-        # Our CoordAtt modules are inside backbone.features...
-        # We can check specific naming or type.
-        # Since we modified model.py to inject CoordAtt (class names 'CoordAtt'), we can check modules.
-        count_unfrozen = 0
-        for name, module in model.named_modules():
-            if "CoordAtt" in str(type(module)):
-                for param in module.parameters():
-                    param.requires_grad = True
-                    count_unfrozen += 1
-        
-        print(f"    -> Unfrozen Wrapper: Classifier + {count_unfrozen} CoordAtt modules enabled.")
+            print(f"    -> Unfrozen Wrapper: Classifier + {count_unfrozen} CoordAtt modules enabled.")
+        else:
+            print(f"❄️  Freeze Strategy Skipped: Resume Epoch {start_epoch+1} >= Freeze Limit {freeze_epochs}. Backbone remains unfrozen.")
+
+    # 🛡️ Double Check for Safety
+    first_param = next(model.backbone.parameters())
+    print(f"🔍 检查 Backbone 状态: {'可训练' if first_param.requires_grad else '已冻结'}")
 
     for epoch in range(start_epoch, cfg.epochs):
         # 🌟 Unfreeze check

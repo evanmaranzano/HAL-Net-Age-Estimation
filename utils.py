@@ -58,12 +58,13 @@ class DLDLProcessor:
         # 预先生成年龄索引张量 [0, 1, ..., num_classes-1]
         self.age_indices = torch.arange(0, config.num_classes, dtype=torch.float32)
 
-    def generate_label_distribution(self, age_scalar):
+    def generate_label_distribution(self, age_scalar, sigma_offset=0.0):
         """
         将标量年龄转化为离散的高斯概率分布。
         改进:
         1. 动态 sigma: 年龄越大,不确定性越高
         2. Label Smoothing: 平滑分布,防止过拟合
+        3. Sigma Jitter: 训练时随机扰动 sigma
         """
         # 2024-12-16: Convert numpy scalar to tensor to prevent warning
         if not isinstance(age_scalar, torch.Tensor):
@@ -74,6 +75,11 @@ class DLDLProcessor:
             sigma = self.sigma_min + (self.sigma_max - self.sigma_min) * (age_scalar / self.max_age)
         else:
             sigma = self.sigma
+            
+        # Apply Jitter (add offset)
+        sigma = sigma + sigma_offset
+        # Ensure sigma doesn't go too low (e.g. < 0.5)
+        sigma = max(sigma, 0.5)
 
         # 计算每个年龄节点 j 与 真实年龄 y 的差异
         # $$P(j|x) \propto e^{-\frac{(j-y)^2}{2\sigma^2}}$$

@@ -1,6 +1,6 @@
 # FADE-Net: A Feature-fused Hybrid Attention Distribution Estimation Network for Lightweight Age Sensing
 
-**日期**: 2026-01-02
+**日期**: 2026-01-03
 **状态**: ✅ Verified (Initial Dry Run Success)
 **项目**: FADE-Net (Feature-fused Attention Distribution Estimation)
 
@@ -112,6 +112,22 @@ ResNet-18 长期以来是该领域的"守门员" (MAE ~3.11)。
 3.  **Safety Clip (安全截断)**: 
     *   **LDS Clip**: 设置最大权重为 **10.0**，防止极端稀缺样本导致梯度爆炸。
     *   **Sigma Reset**: 配合纯净输入，将 `sigma_min` 稳健回调至 **1.0**。
+    
+### G. 数据增强与工程优化 (Refined Augmentation & Engineering)
+为了进一步提升模型对细微特征的感知能力，我们实施了**"Precision-Guided"**的增强策略：
+
+1.  **Safe Random Erasing (安全随机擦除)**:
+    *   **机制**: 基于人脸对齐后的关键点坐标（双眼、口鼻位置），动态检测擦除区域是否覆盖了超过1个关键特征点。
+    *   **效果**: 确保了 Erasure 充当正则化项的同时，不会破坏"五官轮廓"这一核心年龄特征。参数设定为 `scale=(0.02, 0.25)`。
+2.  **Label Sigma Jitter (标签扰动)**:
+    *   **机制**: 在生成 Soft Label 时，对 $\sigma$ 施加 $\pm 0.2$ 的随机均匀噪声。
+    *   **效果**: 充当 "Label-Level Mixup"，防止模型过拟合到单一的高斯分布宽度，增强了对不确定性的鲁棒性。
+3.  **Geometric & Quality Robustness**:
+    *   引入 **RandomAffine (Shear/Translation)** 模拟摄像头视角变化。
+    *   引入 **GaussianBlur** 模拟对焦模糊，强迫模型关注面部全局结构。
+4.  **Engineering Optimizations**:
+    *   **Merged Transforms**: 将旋转整合进仿射变换并进行均值填充，消除了黑色三角伪影。
+    *   **Robust Loading**: 数据集加载加入重试机制 (Retry Logic)，确保训练在大规模数据下的稳定性。
 
 ---
 

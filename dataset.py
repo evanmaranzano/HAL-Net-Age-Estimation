@@ -124,16 +124,23 @@ class AFADDataset(Dataset):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
-        img_path = self.image_paths[idx]
-        age = self.ages[idx]
-        try:
-            image = Image.open(img_path).convert('RGB')
-        except:
-            return None
-        if self.transform:
-            image = self.transform(image)
-        label_dist = self.dldl_proc.generate_label_distribution(age)
-        return image, label_dist, torch.tensor(age, dtype=torch.float32)
+        # 🛡️ Robust Loading with Retry Strategy
+        for attempt in range(3):
+            try:
+                img_path = self.image_paths[idx]
+                age = self.ages[idx]
+                image = Image.open(img_path).convert('RGB')
+                if self.transform:
+                    image = self.transform(image)
+                label_dist = self.dldl_proc.generate_label_distribution(age)
+                return image, label_dist, torch.tensor(age, dtype=torch.float32)
+            except Exception as e:
+                # If failed, pick a random index
+                # print(f"⚠️ Load Fail: {img_path} ({e}), Retrying...") 
+                idx = np.random.randint(len(self.image_paths))
+        
+        # If all retries fail, return None (collate_fn will handle, but risk is minimized)
+        return None
 
 # ==========================================
 # 3. AAF Dataset
@@ -168,31 +175,53 @@ class AAFDataset(Dataset):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
-        img_path = self.image_paths[idx]
-        age = self.ages[idx]
-        try:
-            image = Image.open(img_path).convert('RGB')
-        except:
-            return None
-        if self.transform:
-            image = self.transform(image)
-        label_dist = self.dldl_proc.generate_label_distribution(age)
-        return image, label_dist, torch.tensor(age, dtype=torch.float32)
+        # 🛡️ Robust Loading with Retry Strategy
+        for attempt in range(3):
+            try:
+                img_path = self.image_paths[idx]
+                age = self.ages[idx]
+                image = Image.open(img_path).convert('RGB')
+                if self.transform:
+                    image = self.transform(image)
+                label_dist = self.dldl_proc.generate_label_distribution(age)
+                return image, label_dist, torch.tensor(age, dtype=torch.float32)
+            except Exception as e:
+                # If failed, pick a random index
+                idx = np.random.randint(len(self.image_paths))
+        
+        return None
+
 
 # ==========================================
 # Subset with Transform
 # ==========================================
 class SubsetWithTransform(Dataset):
-    def __init__(self, subset, transform=None):
+    def __init__(self, subset, transform=None, augment_label=False, config=None):
         self.subset = subset
         self.transform = transform
+        self.augment_label = augment_label
+        self.config = config
+        self.dldl_proc = DLDLProcessor(config) if config else None
         
     def __getitem__(self, idx):
         item = self.subset[idx]
         if item is None: return None
         image, label_dist, age = item
+        
+        # Apply Logic
         if self.transform:
             image = self.transform(image)
+            
+        # Label Jitter
+        if self.augment_label and self.config and getattr(self.config, 'use_sigma_jitter', False):
+            # Uniform noise relative to jitter range
+            # e.g. [-0.2, 0.2]
+            jitter_range = getattr(self.config, 'sigma_jitter', 0.2)
+            offset = np.random.uniform(-jitter_range, jitter_range)
+            # Re-generate label distribution
+            # Note: 'age' is a tensor, we need scalar for logic or handle tensor in dldl
+            label_dist = self.dldl_proc.generate_label_distribution(age, sigma_offset=offset)
+            
         return image, label_dist, age
         
     def __len__(self):
@@ -228,27 +257,139 @@ def calculate_lds_weights(ages, config):
     return weights_tensor
 
 # ==========================================
+# Safe Random Erasing (Keypoint-Aware)
+# ==========================================
+class SafeRandomErasing(object):
+    """
+    Randomly selects a rectangle region in an image and erases its pixels.
+    'Safe' variant: Ensures the erased region does not overlap too much with critical face landmarks.
+    Since images are canonically aligned (eyes at 35% height), we can define safe zones.
+    """
+    def __init__(self, p=0.5, scale=(0.02, 0.25), ratio=(0.3, 3.3), value=0, inplace=False, config=None):
+        self.p = p
+        self.scale = scale
+        self.ratio = ratio
+        self.value = value
+        self.inplace = inplace
+        self.config = config
+        
+        # Define approximate landmark zones for 224x224 aligned face
+        # Eyes center line is ~35% (0.35 * 224 = 78)
+        # Eyes are roughly at x=0.32 and x=0.68? No, alignment centered them.
+        # Let's say Critical Zone is the central band.
+        # We try to avoid completely covering the "Central T-Zone"
+        
+    def __call__(self, img):
+        if torch.rand(1) > self.p:
+            return img
+
+        # img is Tensor [C, H, W]
+        if self.inplace:
+            _img = img
+        else:
+            _img = img.clone()
+            
+        c, img_h, img_w = _img.shape
+        area = img_h * img_w
+
+        # Max retries to find a safe spot
+        for attempt in range(10):
+            target_area = random.uniform(self.scale[0], self.scale[1]) * area
+            aspect_ratio = random.uniform(self.ratio[0], self.ratio[1])
+
+            h = int(round(math.sqrt(target_area * aspect_ratio)))
+            w = int(round(math.sqrt(target_area / aspect_ratio)))
+
+            if w < img_w and h < img_h:
+                i = random.randint(0, img_h - h)
+                j = random.randint(0, img_w - w)
+                
+                # Check Safety: Avoid obliterating the eyes/mouth completely
+                # Simple Heuristic: 
+                # Eyes roughly at y=0.35h. Mouth at y=0.75h.
+                # Center x=0.5w.
+                
+                # Let's define "Critical Points"
+                # Left Eye ~ (0.32w, 0.35h), Right Eye ~ (0.68w, 0.35h)
+                # Nose ~ (0.5w, 0.55h)
+                # Mouth ~ (0.5w, 0.75h)
+                
+                crit_pts = [
+                    (0.32 * img_w, 0.35 * img_h), # L Eye
+                    (0.68 * img_w, 0.35 * img_h), # R Eye
+                    (0.50 * img_w, 0.55 * img_h), # Nose
+                    (0.50 * img_w, 0.75 * img_h)  # Mouth
+                ]
+                
+                # Count how many critical points are inside the erase box
+                pts_covered = 0
+                for (cx, cy) in crit_pts:
+                    if i <= cy < i + h and j <= cx < j + w:
+                        pts_covered += 1
+                        
+                # Policy: Don't cover more than 2 critical points? 
+                # Or just don't cover BOTH eyes.
+                # Let's be strict: Allow max 1 critical point covered.
+                if pts_covered <= 1:
+                    # Valid spot!
+                    if self.value == 'random':
+                        v = torch.empty([c, h, w], dtype=torch.float32).normal_()
+                    else:
+                        v = torch.tensor(self.value, dtype=torch.float32)
+                        
+                    _img[:, i:i+h, j:j+w] = v
+                    return _img
+
+        # If failed to find safe spot after retries, return original (or unsafe fallback)
+        print("⚠️ SafeRandomErasing: Failed to find safe spot (10 attempts). Skipping.")
+        return _img
+
+# ==========================================
 # Main: Get DataLoaders
 # ==========================================
 def get_dataloaders(config):
     # Transforms
     # Base Transforms list
     train_transforms_list = [
-        # V2 Training uses strong augs. We keep RRC but ensure strict 224 output.
-        # Scale 0.08-1.0 is standard ImageNet training, 0.8-1.0 is too conservative (weak aug).
-        # We will slightly widen range to 0.5-1.0 to prevent overfitting but keep facial structure intanct.
-        transforms.RandomResizedCrop(config.img_size, scale=(0.5, 1.0)), 
+        # V2 Training uses strong augs.
+        # Adjusted: Scale 0.8-1.0 to preserve facial features (wrinkles) better than 0.5.
+        transforms.RandomResizedCrop(config.img_size, scale=(0.8, 1.0)), 
         transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(15),
+        
+        # Added: Affine (Translation + Shear + Rotation)
+        # Merged Rotation (15) into Affine to avoid black borders (Artifacts).
+        # Fill with approx ImageNet Mean (124, 116, 104)
+        transforms.RandomAffine(
+            degrees=15, 
+            translate=(0.05, 0.05), 
+            scale=(0.9, 1.1), 
+            shear=5,
+            fill=(124, 116, 104) 
+        ),
+        
+        # Added: Blur for quality robustness
+        transforms.GaussianBlur(kernel_size=(3, 3), sigma=(0.1, 2.0)),
+        
+        # transforms.RandomRotation(15), # 🗑️ Removed (Merged into Affine)
+        
         transforms.ColorJitter(0.2, 0.2, 0.1, 0.1),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ]
     
-    # ✅ [Added] Random Erasing (Post-Tensor Augmentation)
+    # ✅ [Modified] Safe Random Erasing (Keypoint-Aware)
     if getattr(config, 'use_random_erasing', False):
-        print(f"🛡️ [Aug] Random Erasing: ENABLED (p={config.re_prob})")
-        train_transforms_list.append(transforms.RandomErasing(p=config.re_prob, scale=(0.02, 0.33), ratio=(0.3, 3.3)))
+        print(f"🛡️ [Aug] Safe Random Erasing: ENABLED (p={config.re_prob}, scale=(0.02, 0.25))")
+        # Custom Safe Erasing
+        train_transforms_list.append(
+            SafeRandomErasing(
+                p=config.re_prob, 
+                scale=(0.02, 0.25), 
+                ratio=(0.3, 3.3), 
+                value='random',
+                config=config
+            )
+        )
     
     train_transform = transforms.Compose(train_transforms_list)
     
@@ -299,7 +440,8 @@ def get_dataloaders(config):
     )
     
     # Apply Transforms
-    train_set = SubsetWithTransform(train_subset, transform=train_transform)
+    # Enable Label Augmentation for Train Set
+    train_set = SubsetWithTransform(train_subset, transform=train_transform, augment_label=True, config=config)
     val_set = SubsetWithTransform(val_subset, transform=val_transform)
     test_set = SubsetWithTransform(test_subset, transform=val_transform)
     
