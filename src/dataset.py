@@ -30,8 +30,7 @@ def get_stratified_split(dataset, all_ages, split_ratios=(0.90, 0.05, 0.05), sav
     Ensures 90/5/5 split holds true for *every single age class*.
     """
     if save_path is None:
-        save_path = os.path.join(ROOT_DIR, "dataset_split_stratified.json")
-        
+        save_path = os.path.join(ROOT_DIR, "dataset_split_stratified.json")        
     assert abs(sum(split_ratios) - 1.0) < 1e-5, "Split ratios must sum to 1"
     
     # Check for existing split
@@ -43,6 +42,12 @@ def get_stratified_split(dataset, all_ages, split_ratios=(0.90, 0.05, 0.05), sav
             train_idx = indices_dict['train']
             val_idx = indices_dict['val']
             test_idx = indices_dict['test']
+            
+            # Verify consistency with current dataset
+            total_stored = len(train_idx) + len(val_idx) + len(test_idx)
+            if total_stored != len(dataset):
+                raise ValueError(f"Dataset size mismatch (Stored: {total_stored} vs Current: {len(dataset)})")
+                
             print(f"✅ Loaded: Train={len(train_idx)}, Val={len(val_idx)}, Test={len(test_idx)}")
             return Subset(dataset, train_idx), Subset(dataset, val_idx), Subset(dataset, test_idx)
         except Exception as e:
@@ -438,11 +443,22 @@ def get_dataloaders(config):
     full_dataset = ConcatDataset(all_datasets)
     print(f"\n📦 Total Images: {len(full_dataset)}")
     
-    # Stratified Split
+    # Stratified Split with Dynamic Naming
+    split_filename = "dataset_split_Mixed.json"
+    if len(all_datasets) == 1:
+        # If only one dataset (e.g. AFAD), use its name
+        if isinstance(all_datasets[0], AFADDataset):
+            split_filename = "dataset_split_AFAD.json"
+        elif isinstance(all_datasets[0], AAFDataset):
+            split_filename = "dataset_split_AAF.json"
+            
+    print(f"📄 Using split file: {split_filename}")
+    
     train_subset, val_subset, test_subset = get_stratified_split(
         full_dataset, 
         all_ages, 
-        split_ratios=(0.90, 0.05, 0.05)
+        split_ratios=(0.90, 0.05, 0.05),
+        save_path=os.path.join(ROOT_DIR, split_filename)
     )
     
     # Apply Transforms
