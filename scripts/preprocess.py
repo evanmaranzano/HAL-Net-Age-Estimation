@@ -1,10 +1,16 @@
 import os
+import sys
+
+# Add project root to path to allow imports from src
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(PROJECT_ROOT)
+
 import cv2
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
-from utils import FaceAligner
-from config import Config
+from src.utils import FaceAligner
+from src.config import Config
 import shutil
 
 def process_dataset(source_root, target_root, aligner, img_size=224, dataset_type='flat'):
@@ -132,17 +138,17 @@ def main():
     print("✅ FaceAligner initialized.", flush=True)
     
     # 定义新的根目录
-    base_aligned_dir = "./data_aligned"
+    base_aligned_dir = os.path.join(PROJECT_ROOT, "datasets")
     
     # 1. UTKFace Train
-    raw_train_dir = "./data/UTKFace/train"
+    raw_train_dir = os.path.join(PROJECT_ROOT, "data", "UTKFace", "train")
     print(f"Checking {raw_train_dir}...", flush=True)
     process_dataset(raw_train_dir, 
                     os.path.join(base_aligned_dir, "UTKFace", "train"), 
                     aligner, cfg.img_size, 'flat')
                     
     # 2. UTKFace Val
-    raw_val_dir = "./data/UTKFace/val"
+    raw_val_dir = os.path.join(PROJECT_ROOT, "data", "UTKFace", "val")
     print(f"Checking {raw_val_dir}...", flush=True)
     process_dataset(raw_val_dir, 
                     os.path.join(base_aligned_dir, "UTKFace", "val"), 
@@ -168,7 +174,7 @@ def main():
     else:
         print(f"⚠️ 未找到 AAF 源目录: {raw_aaf_dir}", flush=True)
                         
-    print("\n🎉 数据预处理全部完成！新数据位于 ./data_aligned", flush=True)
+    print(f"\n🎉 数据预处理全部完成！新数据位于 {base_aligned_dir}", flush=True)
     print("请记得更新 config.py 中的路径！", flush=True)
 
 if __name__ == "__main__":

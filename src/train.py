@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from config import Config
+from config import Config, ROOT_DIR
 from dataset import get_dataloaders
 from model import LightweightAgeEstimator
 from utils import DLDLProcessor, EMAModel, CombinedLoss, seed_everything
@@ -108,9 +108,9 @@ def train():
     # --- 断点续训逻辑 ---
     start_epoch = 0
     best_mae = float('inf')
-    checkpoint_path = "last_checkpoint.pth"
+    checkpoint_path = os.path.join(ROOT_DIR, "last_checkpoint.pth")
     # Dynamic naming: best_model_FADE-Net_HA_DLDL_MSFF_SPP.pth
-    best_model_path = f"best_model_{cfg.project_name}.pth"
+    best_model_path = os.path.join(ROOT_DIR, f"best_model_{cfg.project_name}.pth")
     print(f"🎯 Target Checkpoint Name: {best_model_path}")
     resume_training = False
 
@@ -135,13 +135,13 @@ def train():
         print("🚀 开始全新训练...")
 
     # 初始化 Logger
-    epoch_logger = CSVLogger('training_log.csv', 
+    epoch_logger = CSVLogger(os.path.join(ROOT_DIR, 'training_log.csv'), 
                              ['Epoch', 'Train_Loss', 'Train_MAE', 'Val_Loss', 'Val_MAE', 'LR', 'Time', 'Is_Best'], 
                              resume=resume_training)
-    batch_logger = CSVLogger('batch_log.csv', ['Epoch', 'Batch', 'Total_Loss', 'KL_Loss', 'L1_Loss', 'Rank_Loss'], resume=resume_training)
+    batch_logger = CSVLogger(os.path.join(ROOT_DIR, 'batch_log.csv'), ['Epoch', 'Batch', 'Total_Loss', 'KL_Loss', 'L1_Loss', 'Rank_Loss'], resume=resume_training)
 
     # 初始化 TensorBoard Writer
-    log_dir = f"runs/{cfg.project_name}_{int(time.time())}"
+    log_dir = os.path.join(ROOT_DIR, "runs", f"{cfg.project_name}_{int(time.time())}")
     writer = SummaryWriter(log_dir=log_dir)
     print(f"📈 TensorBoard 日志目录: {log_dir}")
 
@@ -350,7 +350,7 @@ def train():
         # --- Manual SWA Strategy ---
         # Save checkpoints for the last 10 epochs
         if epoch >= cfg.epochs - 10:
-            swa_filename = f"checkpoint_epoch_{epoch+1}.pth"
+            swa_filename = os.path.join(ROOT_DIR, f"checkpoint_epoch_{epoch+1}.pth")
             print(f"💾 Saving SWA Checkpoint: {swa_filename}")
             save_checkpoint(checkpoint_dict, filename=swa_filename)
     
@@ -400,7 +400,7 @@ def train():
     print(f"🏆 Final Test MAE: {final_test_mae:.4f}")
     
     # Save Final Result
-    with open("final_result.txt", "w") as f:
+    with open(os.path.join(ROOT_DIR, "final_result.txt"), "w") as f:
         f.write(f"Test MAE: {final_test_mae:.4f}\n")
         
     writer.close()

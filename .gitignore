@@ -3,27 +3,32 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Data
+# Datasets & Raw Data
+datasets/
 data/
-data_aligned/
 *.zip
+*.tar
 *.tar.gz
+*.rar
 
-# Models & Logs
-*.pth
+# Training Outputs
 runs/
-training_log.csv
-batch_log.csv
+*.pth
+*.csv
+
+# Logs and System
 .gemini/
 backup/
-backup_script.ps1
+*.log
 
-# IDE
+# IDE Settings
 .vscode/
 .idea/
 
-# OS
+# OS Generated
 Thumbs.db
 Desktop.ini
+.DS_Store
 
+# Documentation artifacts (optional)
 technical_report.html

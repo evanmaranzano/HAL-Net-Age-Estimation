@@ -8,7 +8,7 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader, ConcatDataset, Subset
 from torchvision import transforms
 from utils import DLDLProcessor, FaceAligner
-from config import Config
+from config import Config, ROOT_DIR
 from collections import Counter, defaultdict
 from scipy.ndimage import gaussian_filter1d
 
@@ -24,11 +24,14 @@ def my_collate_fn(batch):
 # ==========================================
 # 0. Stratified Split Strategy (The "Platinum" Choice)
 # ==========================================
-def get_stratified_split(dataset, all_ages, split_ratios=(0.90, 0.05, 0.05), save_path="dataset_split_stratified.json"):
+def get_stratified_split(dataset, all_ages, split_ratios=(0.90, 0.05, 0.05), save_path=None):
     """
     Perform Stratified Sampling based on age labels.
     Ensures 90/5/5 split holds true for *every single age class*.
     """
+    if save_path is None:
+        save_path = os.path.join(ROOT_DIR, "dataset_split_stratified.json")
+        
     assert abs(sum(split_ratios) - 1.0) < 1e-5, "Split ratios must sum to 1"
     
     # Check for existing split

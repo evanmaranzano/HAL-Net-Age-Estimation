@@ -15,7 +15,7 @@ import sys
 
 # Import local modules
 from model import LightweightAgeEstimator
-from config import Config
+from config import Config, ROOT_DIR
 from utils import DLDLProcessor
 
 # ================= Configuration & Styles =================
@@ -206,9 +206,17 @@ def load_model():
     cfg = Config()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    model = LightweightAgeEstimator(num_classes=cfg.num_classes).to(device)
+    # Updated instantiation to match src/model.py
+    model = LightweightAgeEstimator(cfg).to(device)
     try:
-        checkpoint = torch.load("best_model.pth", map_location=device)
+        # Try dynamic name first
+        model_path = os.path.join(ROOT_DIR, f"best_model_{cfg.project_name}.pth")
+        if not os.path.exists(model_path):
+            # Fallback to generic name
+            model_path = os.path.join(ROOT_DIR, "best_model.pth")
+            
+        print(f"⏳ Loading model from: {model_path}")
+        checkpoint = torch.load(model_path, map_location=device)
         state_dict = checkpoint['model_state_dict'] if 'model_state_dict' in checkpoint else checkpoint
         model.load_state_dict(state_dict)
         model.eval()

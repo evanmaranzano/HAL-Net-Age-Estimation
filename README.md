@@ -35,15 +35,23 @@
 
 ## 📂 Project Structure
 
-```text
-├── config.py             # [Core] Global configuration (Hyperparams, Ablation Flags)
-├── model.py              # [Core] FADE-Net architecture (Backbone + SPP + Fusion)
-├── dataset.py            # [Data] Dataset class & Stratified Splitting
-├── train.py              # [Main] Training loop with Freeze Strategy
-├── utils.py              # [Utils] DLDL-v2 Loss, EMA, Metrics
-├── technical_report.md   # [Docs] Detailed Technical Report
+├── src/                  # [Source] Core logic and entry points
+│   ├── config.py         # Global configuration
+│   ├── model.py          # FADE-Net architecture
+│   ├── dataset.py        # Dataset class
+│   ├── train.py          # Main training script
+│   ├── web_demo.py       # Streamlit App
+│   └── utils.py          # Utilities
+├── scripts/              # [Scripts] Preprocessing and Tools
+│   ├── preprocess.py     # Data cleaning/alignment
+│   ├── plot_results.py   # Visualization
+│   └── ...
+├── datasets/             # [Data] Aligned datasets (Renamed from data_aligned)
+├── runs/                 # Training logs
+├── docs/                 # [Documentation]
+│   ├── dataset_setup.md
+│   └── technical_report.md
 └── README.md             # Project documentation
-```
 
 ---
 
@@ -57,15 +65,15 @@ pip install torch torchvision numpy pandas tqdm tensorboard matplotlib scipy
 ### 2. Training
 Run the full training pipeline (SOTA configuration):
 ```bash
-python train.py --epochs 120 --freeze_backbone_epochs 5
+python src/train.py --epochs 120 --freeze_backbone_epochs 5
 ```
 *   **Checkpoints**: Saved in `checkpoints/`
 *   **Logs**: Saved in `runs/FADE-Net_...` (Auto-named based on active modules)
 
 ### 3. Evaluation
 ```bash
-python plot_results.py    # Generate visualization
-python benchmark_speed.py # Test FPS
+python scripts/plot_results.py    # Generate visualization
+python src/benchmark_speed.py     # Test FPS
 ```
 
 ---
@@ -73,7 +81,7 @@ python benchmark_speed.py # Test FPS
 ## 💻 Web Demo
 Interactive web interface for real-time age estimation:
 ```bash
-streamlit run web_demo.py
+streamlit run src/web_demo.py
 ```
 
 ---

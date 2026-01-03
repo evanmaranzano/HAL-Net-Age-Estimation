@@ -1,4 +1,7 @@
-import torch
+import os
+
+# Define Project Root (src is one level deep)
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class Config:
     # --- 1. 🔬 Ablation Switch (消融实验核心开关) ---
@@ -64,9 +67,9 @@ class Config:
     # 标签平滑 (Label Smoothing)
     label_smoothing = 0.0        # 禁用，避免污染 DLDL 分布
     
-    # 数据集路径
-    afad_dir = "./data_aligned/AFAD"
-    aaf_dir = "./data_aligned/AAF"
+    # 数据集路径 relative to ROOT_DIR
+    afad_dir = os.path.join(ROOT_DIR, "datasets", "AFAD")
+    aaf_dir = os.path.join(ROOT_DIR, "datasets", "AAF")
     
     # LDS (标签分布平滑)
     use_reweighting = True
