@@ -37,24 +37,24 @@
 
 ```text
 code/
-├── src/                  # [Source] 核心代码与入口
-│   ├── config.py         # 全局配置 (可控开关: use_aaf, ablation...)
-│   ├── model.py          # FADE-Net 网络架构
-│   ├── dataset.py        # 数据集加载与增强逻辑
-│   ├── train.py          # 训练主脚本
-│   ├── web_demo.py       # Web 演示程序
-│   └── utils.py          # 工具函数 (DLDL, EMA, 评价指标)
-├── scripts/              # [Scripts] 辅助脚本工具
-│   ├── preprocess.py     # 数据预处理 (AFAD/AAF -> datasets/)
-│   ├── plot_results.py   # 结果可视化
-│   └── benchmark_speed.py # 推理速度测试
-├── datasets/             # [Data] 预处理后的数据集 (AFAD, AAF, UTKFace)
-├── docs/                 # [Docs] 项目文档
-│   ├── dataset_setup.md  # 数据集准备指南
+├── src/                  # [Source] Core Logic & Entry Points
+│   ├── config.py         # Configuration (Toggles: use_aaf, ablation...)
+│   ├── model.py          # FADE-Net Architecture
+│   ├── dataset.py        # Dataset Loading & Augmentation
+│   ├── train.py          # Main Training Script
+│   ├── web_demo.py       # Web Application (Streamlit)
+│   └── utils.py          # Utilities (DLDL, EMA, Metrics)
+├── scripts/              # [Scripts] Tools & Preprocessing
+│   ├── preprocess.py     # Data Preprocessing (AFAD/AAF -> datasets/)
+│   ├── plot_results.py   # Visualization
+│   └── benchmark_speed.py # Inference Speed Test
+├── datasets/             # [Data] Preprocessed Datasets (AFAD, AAF, UTKFace)
+├── docs/                 # [Docs] Documentation
+│   ├── dataset_setup.md  # Dataset Setup Guide
 │   └── technical_report.md
-├── runs/                 # [Output] 训练日志与TensorBoard
-├── requirements.txt      # 依赖列表
-└── README.md             # 项目说明
+├── runs/                 # [Output] Training Logs & Checkpoints
+├── requirements.txt      # Dependencies List
+└── README.md             # Project README
 ```
 
 ---
@@ -62,7 +62,7 @@ code/
 ## 🚀 Getting Started
 
 ### 1. Requirements
-使用 `requirements.txt` 安装所有依赖：
+Install dependencies via `requirements.txt`:
 ```bash
 pip install -r requirements.txt
 ```
