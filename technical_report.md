@@ -103,11 +103,11 @@ ResNet-18 长期以来是该领域的"守门员" (MAE ~3.11)。
 ### F. 超参数精调: 黄金分割策略 (The Golden Mean Strategy)
 为了解决 "Distribution Consistency" 与 "Structural Constraint" 之间的潜在冲突，我们在最终阶段实施了严密的 **Golden Mean** 调优：
 
-1.  **Augmentation Shift (数据增强迁移)**:
-    *   **移除 Mixup**: 发现 Mixup 生成的线性插值标签会导致 DLDL 的单峰高斯分布失真 (Double-Peak Noise)。
-    *   **引入 Random Erasing**: 作为不改变标签分布的物理防御手段 (p=0.5)，有效防止过拟合。
+1.  **Augmentation Synergy (增强协同)**:
+    *   **启用 Mixup**: 重新启用 Mixup (alpha=0.2)，恢复流形平滑 (Manifold Smoothing) 能力，显著提升泛化性。
+    *   **保留 Random Erasing**: 与 Mixup 形成 "AugMix" 效应，进一步增强鲁棒性。
 2.  **Loss Balance (损失平衡)**:
-    *   **Rank Weight (0.3)**: 设定为 **0.3** 的黄金点。既避免了 0.45 带来的梯度淹没 (Gradient Drowning)，又提供了足够的结构约束。
+    *   **Rank Weight (0.5)**: 恢复至 **0.5** (Baseline 最佳设置)，在 Mixup 存在的情况下提供足够的结构约束。
     *   **Weighted L1**: 将 LDS 权重同时也应用在 L1 Loss 上，实现对稀缺样本的 "Precision-Guided" 优化。
 3.  **Safety Clip (安全截断)**: 
     *   **LDS Clip**: 设置最大权重为 **10.0**，防止极端稀缺样本导致梯度爆炸。

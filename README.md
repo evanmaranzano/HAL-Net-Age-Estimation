@@ -27,7 +27,7 @@
 2.  **Spatial Pyramid Pooling (SPP) (New)**: Enhanced structural design with SPP and stratified splitting further improves representation efficiency.
 3.  **Hybrid Attention**: Injecting **Coordinate Attention (CA)** into deep layers to enhance spatial awareness without heavy computation.
 4.  **DLDL-v2**: Adaptive Label Distribution Learning with **Ranking Loss (0.3)** and **Weighted L1**.
-5.  **Robust Training**: **Safe Random Erasing (Keypoint-Aware)** + **Label Sigma Jitter** ensures robust feature learning without semantic occlusion.
+5.  **Robust Training**: **Mixup** + **Safe Random Erasing** (Synergistic Augmentation) + **Label Sigma Jitter** ensures robust feature learning.
 6.  **Fine-Grained Augmentation**: Optimized pipeline with **Affine (Shear/Trans)** and **Gaussian Blur** for geometric and quality robustness.
 7.  **Pre-training**: Uses **ImageNet1K V2** weights (Top-1 75.2%) for robust initialization.
 

@@ -32,7 +32,7 @@ class Config:
     sigma_min = 1.0              #  Revert to 1.0 for stability (Mixup Removed)
     sigma_max = 3.5
     lambda_l1 = 0.1
-    lambda_rank = 0.3            # ⚖️ Golden Mean (MobileNetV3 + No Mixup)
+    lambda_rank = 0.5            # ⚖️ Reverted to 0.5 (Original Best Setting with Mixup)
     
     # Label-Level Perturbation (Sigma Jitter)
     use_sigma_jitter = True
@@ -49,7 +49,7 @@ class Config:
     
     # 数据增强与正则化
     dropout = 0.2
-    use_mixup = False            # 🛑 Disabled to resolve DLDL/Rank Loss conflict
+    use_mixup = True             # ✅ Re-enabled: Essential for Manifold Smoothing & Generalization
     
     # ✅ [Added] Random Erasing as Compensation
     use_random_erasing = True
