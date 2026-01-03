@@ -1,0 +1,12 @@
+torch>=2.0.0
+torchvision>=0.15.0
+numpy
+pandas
+scipy
+opencv-python
+Pillow
+tqdm
+mediapipe
+streamlit
+tensorboard
+PyQt5

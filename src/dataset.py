@@ -412,18 +412,20 @@ def get_dataloaders(config):
     all_ages = []
     
     # 1. AFAD
-    if hasattr(config, 'afad_dir') and os.path.exists(config.afad_dir):
+    if getattr(config, 'use_afad', True) and hasattr(config, 'afad_dir') and os.path.exists(config.afad_dir):
         afad = AFADDataset(config.afad_dir, config=config)
         if len(afad) > 0:
             all_datasets.append(afad)
             all_ages.extend(afad.ages)
+            print(f"✅ [Dataset] Added AFAD ({len(afad)} images)")
             
     # 2. AAF
-    if hasattr(config, 'aaf_dir') and os.path.exists(config.aaf_dir):
+    if getattr(config, 'use_aaf', False) and hasattr(config, 'aaf_dir') and os.path.exists(config.aaf_dir):
         aaf = AAFDataset(config.aaf_dir, config=config)
         if len(aaf) > 0:
             all_datasets.append(aaf)
             all_ages.extend(aaf.ages)
+            print(f"✅ [Dataset] Added AAF ({len(aaf)} images)")
             
     if not all_datasets:
         raise ValueError("No datasets found! Check config paths.")

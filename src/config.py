@@ -67,6 +67,10 @@ class Config:
     # 标签平滑 (Label Smoothing)
     label_smoothing = 0.0        # 禁用，避免污染 DLDL 分布
     
+    # 数据集开关 (Set use_aaf=False for pure academic benchmark)
+    use_afad = True
+    use_aaf = False   # 默认开启以增强鲁棒性，若需对比 SOTA 请设为 False
+
     # 数据集路径 relative to ROOT_DIR
     afad_dir = os.path.join(ROOT_DIR, "datasets", "AFAD")
     aaf_dir = os.path.join(ROOT_DIR, "datasets", "AAF")
