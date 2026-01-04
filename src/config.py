@@ -13,7 +13,17 @@ class Config:
     
     # --- 1.1 📊 Split Protocol (New) ---
     # Options: '90-5-5' (Our Best) or '72-8-20' (Standard 80-20 implementation)
+    # Options: '90-5-5' (Our Best) or '72-8-20' (Standard 80-20 implementation)
     split_protocol = '90-5-5'
+
+    # --- 1.2 🌱 Academic Seeds (with Meanings) ---
+    ACADEMIC_SEEDS = {
+        42:   "The Answer to Life, the Universe, and Everything",
+        3407: '"Torch.manual_seed(3407) is all you need" (arXiv:2109.08203)',
+        2026: "Current Year (Modernity Check)",
+        1337: "Leet (Elite)",
+        1106: "Special Dedication <3 (Randomly Sampled w.r.t our hearts)"
+    }
 
     # --- 2. 🚀 动态项目命名逻辑 (Robust & Dynamic) ---
     @property

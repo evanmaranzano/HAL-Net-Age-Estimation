@@ -92,6 +92,10 @@ def train(args):
         cfg.freeze_backbone_epochs = args.freeze
         print(f"🔧 CLI Override: Freeze Epochs -> {cfg.freeze_backbone_epochs}")
 
+    # 🌱 Easter Egg: Print Seed Meaning
+    if seed in cfg.ACADEMIC_SEEDS:
+        print(f"✨ Seed {seed}: {cfg.ACADEMIC_SEEDS[seed]}")
+
     dldl_tools = DLDLProcessor(cfg)
     
     # ==========================================

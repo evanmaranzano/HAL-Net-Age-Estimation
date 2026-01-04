@@ -3,15 +3,10 @@ import os
 import re
 import numpy as np
 import sys
+from src.config import Config
 
-# Define seeds
-SEEDS = [
-    42,    # The Answer to Life, the Universe, and Everything
-    3407,  # "Torch.manual_seed(3407) is all you need" (arXiv:2109.08203)
-    2026,  # Current Year (Modernity Check)
-    1337,  # Leet (Elite)
-    1106   # Special Dedication <3 (Randomly Sampled w.r.t our hearts)
-]
+# Define seeds from Shared Config
+SEEDS = list(Config.ACADEMIC_SEEDS.keys())
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PYTHON_EXE = sys.executable
 
