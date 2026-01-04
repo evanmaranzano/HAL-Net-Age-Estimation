@@ -10,6 +10,10 @@ class Config:
     use_dldl_v2 = True           # DLDL: Adaptive Sigma + Rank Loss
     use_multi_scale = True       # MSFF: Texture-Semantics Dual-Stream
     use_spp = True               # SPP: Spatial Pyramid Pooling
+    
+    # --- 1.1 📊 Split Protocol (New) ---
+    # Options: '90-5-5' (Our Best) or '72-8-20' (Standard 80-20 implementation)
+    split_protocol = '90-5-5'
 
     # --- 2. 🚀 动态项目命名逻辑 (Robust & Dynamic) ---
     @property

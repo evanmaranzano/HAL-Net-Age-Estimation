@@ -447,21 +447,37 @@ def get_dataloaders(config):
     full_dataset = ConcatDataset(all_datasets)
     print(f"\n📦 Total Images: {len(full_dataset)}")
     
-    # Stratified Split with Dynamic Naming
+    # Stratified Split with Dynamic Naming & Protocol
     split_filename = "dataset_split_Mixed.json"
+    dataset_prefix = "Mixed"
     if len(all_datasets) == 1:
-        # If only one dataset (e.g. AFAD), use its name
         if isinstance(all_datasets[0], AFADDataset):
             split_filename = "dataset_split_AFAD.json"
+            dataset_prefix = "AFAD"
         elif isinstance(all_datasets[0], AAFDataset):
             split_filename = "dataset_split_AAF.json"
+            dataset_prefix = "AAF"
             
-    print(f"📄 Using split file: {split_filename}")
+    # Determine Ratios based on Protocol
+    split_protocol = getattr(config, 'split_protocol', '90-5-5')
+    
+    if split_protocol == '72-8-20':
+        print("⚠️ Using Standard 80-20 Protocol (Train 72% / Val 8% / Test 20%)")
+        target_ratios = (0.72, 0.08, 0.20)
+        # Use a distinct filename to strictly avoid overwriting the main benchmark split
+        split_filename = f"dataset_split_{dataset_prefix}_72_8_20.json"
+    else:
+        # Default 90-5-5
+        if split_protocol != '90-5-5':
+            print(f"⚠️ Unknown protocol '{split_protocol}', falling back to 90-5-5")
+        target_ratios = (0.90, 0.05, 0.05)
+        
+    print(f"📄 Using split file: {split_filename} (Mode: {split_protocol})")
     
     train_subset, val_subset, test_subset = get_stratified_split(
         full_dataset, 
         all_ages, 
-        split_ratios=(0.90, 0.05, 0.05),
+        split_ratios=target_ratios,
         save_path=os.path.join(ROOT_DIR, split_filename)
     )
     
