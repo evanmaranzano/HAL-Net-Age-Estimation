@@ -5,7 +5,7 @@ import numpy as np
 import sys
 
 # Define seeds
-SEEDS = [42, 2026, 3407]
+SEEDS = [42, 2026, 3407, 1, 123]
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PYTHON_EXE = sys.executable
 
@@ -81,7 +81,7 @@ def main():
         print("\n👋 No arguments detected. Please select a mode:")
         print("   [1] Run Default Seed (42)  -> Quick Verification")
         print("   [2] Run Custom Seed        -> You specify the number")
-        print("   [3] Run All Academic Seeds -> [42, 2024, 3407] (For Paper)")
+        print(f"   [3] Run All Academic Seeds -> {SEEDS} (For Paper)")
         print("   [q] Quit")
         
         try:
