@@ -10,7 +10,6 @@ data/
 *.tar
 *.tar.gz
 *.rar
-
 # Training Outputs
 runs/
 *.pth
