@@ -81,11 +81,8 @@ def average_weights(checkpoints, include_best=False, best_path=None):
         
     return avg_state_dict
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--seed', type=int, default=42, help='Seed used for training')
-    args = parser.parse_args()
-
+def main(seed):
+    print(f"\n🥣 Starting Model Soup for Seed {seed}...")
     cfg = Config()
     device = cfg.device
     print(f"⚙️ Device: {device}")
@@ -96,17 +93,16 @@ def main():
     dldl_tools = DLDLProcessor(cfg)
     
     # 2. Identify Checkpoints (Last 10 epochs)
-    # Assuming checkpoints are named checkpoint_epoch_X.pth
-    # We look for the files present in the directory
-    checkpoints = sorted(glob.glob("checkpoint_epoch_*.pth"))
+    # Search for specific seed patterns
+    pattern = f"checkpoint_seed{seed}_epoch_*.pth"
+    checkpoints = sorted(glob.glob(pattern))
     
     if not checkpoints:
-        print("⚠️ No epoch checkpoints found! Using only best_model if available.")
+        print(f"⚠️ No epoch checkpoints found for pattern '{pattern}'!")
+        print("Using only best_model if available.")
         checkpoints = []
     else:
-        # Filter to keep only the latest ones if there are too many, e.g., last 5-10
-        # Since user deleted some, we just take what's there
-        print(f"Found {len(checkpoints)} checkpoints candidates.")
+        print(f"Found {len(checkpoints)} checkpoints candidates for Seed {seed}.")
 
     # 3. Strategy A: Soup (Epochs Only)
     print("\n🍵 Strategy A: SWA (Epochs 111-120)")
@@ -121,11 +117,8 @@ def main():
 
     # 4. Strategy B: Soup + Best (Epochs + Best)
     print("\n🥘 Strategy B: SWA + Best Model")
-    # 4. Strategy B: Soup + Best (Epochs + Best)
-    # 4. Strategy B: Soup + Best (Epochs + Best)
-    print("\n🥘 Strategy B: SWA + Best Model")
     # Dynamic naming: best_model_FADE-Net_HA_DLDL_MSFF_SPP_seed{seed}.pth
-    best_model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), f"best_model_{cfg.project_name}_seed{args.seed}.pth")
+    best_model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), f"best_model_{cfg.project_name}_seed{seed}.pth")
     soup_b_state = average_weights(checkpoints.copy(), include_best=True, best_path=best_model_path)
     mae_b_val = 999.0
     mae_b_test = 999.0
@@ -166,14 +159,74 @@ def main():
     print(f"📝 Report Test MAE: {mae_best_test if 'Best' in winner else (mae_a_test if 'Epochs' in winner else mae_b_test):.4f}")
 
     # Save if soup won
+    output_filename = f"final_soup_model_seed{seed}.pth"
     if winner == "Soup (Epochs)":
-        torch.save(soup_a_state, "final_soup_model.pth")
-        print("💾 Saved best soup to: final_soup_model.pth")
+        torch.save(soup_a_state, output_filename)
+        print(f"💾 Saved best soup to: {output_filename}")
     elif winner == "Soup (+Best)":
-        torch.save(soup_b_state, "final_soup_model.pth")
-        print("💾 Saved best soup to: final_soup_model.pth")
+        torch.save(soup_b_state, output_filename)
+        print(f"💾 Saved best soup to: {output_filename}")
     else:
-        print("💾 Best model remains 'best_model.pth'. Kept original.")
+        print(f"💾 Best model remains '{os.path.basename(best_model_path)}'. Kept original.")
 
 if __name__ == "__main__":
-    main()
+    import sys
+    
+    # Check for CLI args first
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--seed', type=int, help='Seed used for training')
+    args = parser.parse_args()
+
+    if args.seed is not None:
+        main(args.seed)
+    else:
+        # Interactive Mode
+        print("="*60)
+        print("🍵 FADE-Net Model Soup Kitchen")
+        print("="*60)
+        
+        # Scan for available seeds based on checkpoints
+        # Look for checkpoint_seed{SEED}_epoch_*.pth
+        all_checkpoints = glob.glob("checkpoint_seed*_epoch_*.pth")
+        seeds = set()
+        for cp in all_checkpoints:
+            try:
+                # Naive parse: checkpoint_seed123_epoch_115.pth
+                # Split by '_' -> ['checkpoint', 'seed123', 'epoch', '115.pth']
+                parts = cp.split('_')
+                if len(parts) >= 2 and parts[1].startswith('seed'):
+                    s = int(parts[1].replace('seed', ''))
+                    seeds.add(s)
+            except:
+                continue
+        
+        sorted_seeds = sorted(list(seeds), key=lambda x: (0 if x == 42 else 1, x))
+        
+        print("🔍 Found soup ingredients for seeds:")
+        menu_map = {}
+        for idx, s in enumerate(sorted_seeds):
+            print(f"   {idx+1}. [Seed {s}]")
+            menu_map[str(idx+1)] = s
+            
+        print(f"   m. [Manual] Enter Seed ID Manually")
+        print("   q. [Quit]   Exit")
+        print("-" * 60)
+        
+        try:
+            choice = input(f"👉 Select seed to cook [1-{len(sorted_seeds)}]: ").strip().lower()
+            
+            if choice == 'q':
+                sys.exit(0)
+            elif choice == 'm':
+                 manual_seed = int(input("👉 Enter Seed ID: ").strip())
+                 main(manual_seed)
+            elif choice in menu_map:
+                main(menu_map[choice])
+            else:
+                 print("❌ Invalid choice.")
+                 
+        except KeyboardInterrupt:
+             sys.exit(0)
+        except ValueError:
+             print("❌ Invalid input.")
+
