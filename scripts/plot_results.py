@@ -205,7 +205,7 @@ def plot_thesis_suite():
     filtered_batch = df_batch[df_batch['Epoch'].isin(selected_epochs)]
     
     # 修复：添加 hue 参数和 legend=False
-    sns.boxplot(x='Epoch', y='Total_Loss', data=filtered_batch, hue='Epoch', palette="Blues", fliersize=1, linewidth=1, legend=False)
+    sns.boxplot(x='Epoch', y='Total_Loss', data=filtered_batch, hue='Epoch', palette="Blues", fliersize=1, linewidth=1)
     plt.title('Batch Loss Distribution per Epoch (Variance Analysis)')
     plt.xlabel('Epoch')
     plt.ylabel('Batch Loss')

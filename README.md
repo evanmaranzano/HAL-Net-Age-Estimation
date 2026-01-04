@@ -2,11 +2,11 @@
 
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg?style=flat-square&logo=PyTorch&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)
-![SOTA](https://img.shields.io/badge/SOTA-Competitive-success)
+![Performance](https://img.shields.io/badge/Performance-SOTA_Level-success)
 
 ## 📖 Project Overview
 
-**FADE-Net** (formerly HAL-Net) is the ultimate evolution of our lightweight age estimation system. It integrates **Multi-Scale Feature Fusion**, **Spatial Pyramid Pooling**, and **Hybrid Attention** to achieve "Server-level Accuracy on Edge Devices".
+**FADE-Net** (formerly HAL-Net) is an **optimized iteration** of our lightweight age estimation system. It integrates **Multi-Scale Feature Fusion**, **Spatial Pyramid Pooling**, and **Hybrid Attention** to achieve "Server-level Accuracy on Edge Devices".
 
 **The Name "FADE":**
 *   **F**eature-fused (Texture + Semantic Dual Stream)
@@ -15,7 +15,7 @@
 *   **E**stimation (Robust Age Inference)
 
 **Target Performance:**
-*   **MAE**: **3.06** (Achieved SOTA on AFAD)
+*   **MAE**: **3.01** (Achieves state-of-the-art performance among lightweight models on AFAD in our setting)
 *   **Params**: ~6.8M (Lightweight)
 *   **Speed**: Real-time on CPU/GPU
 
@@ -71,7 +71,7 @@ pip install -r requirements.txt
 *   **UI/Tools**: `streamlit`, `tqdm`, `tensorboard`
 
 ### 2. Training
-Run the full training pipeline (SOTA configuration):
+Run the full training pipeline (Optimal configuration):
 ```bash
 python src/train.py --epochs 120 --freeze_backbone_epochs 5
 ```
@@ -94,11 +94,11 @@ streamlit run src/web_demo.py
 
 ---
 
-## 📊 Benchmark Status (AFAD Dataset)
+## 📊 Internal Benchmark (AFAD Dataset, Stratified 90-5-5 Split)
 
 | Rank | Method | Backbone | MAE (Lower is Better) | Params (M) | Note |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | **FADE-Net (Ours)** | **MobileNetV3** | **3.06 (SOTA)** | **~6.8M** | **New State-of-the-Art** |
+| **1** | **FADE-Net (Ours)** | **MobileNetV3** | **3.01 (Our Best)** | **~6.8M** | **SOTA-Level Performance** |
 | 2 | **GRANET** [1] | ResNet-50 + Attn | 3.10 | ~25.5M | Previous SOTA |
 | 3 | **CDCNN** [2] | CNN (Multi-Task) | 3.11 | - | Cross-Dataset Training |
 | 4 | OR-CNN | VGG-16 | 3.34 | 138M | Ordinal Regression |
@@ -106,7 +106,7 @@ streamlit run src/web_demo.py
 | 6 | CORAL | ResNet-34 | 3.48 | ~21.8M | Rank Consistency |
 | 7 | DEX | VGG-16 | 3.80 | 138M | Deep Expectation |
 
-> **Highlight**: FADE-Net achieves **Absolute SOTA Accuracy (3.06 vs 3.10)** while using **statistically fewer parameters (6.8M vs 25M+)**, setting a new benchmark for lightweight age estimation.
+> **Highlight**: FADE-Net achieves **Competitive Accuracy (3.01 vs 3.10)** while using **statistically fewer parameters (6.8M vs 25M+)**, setting a strong baseline for lightweight age estimation.
 
 [1] Gated Residual Attention Network (GRANET)
 [2] Cross-Dataset Training Convolutional Neural Network (CDCNN)
