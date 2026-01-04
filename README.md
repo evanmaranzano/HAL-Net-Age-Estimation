@@ -47,14 +47,14 @@ code/
 │   ├── web_demo.py       # Web Application (Streamlit)
 │   └── utils.py          # Utilities (DLDL, EMA, Metrics)
 ├── scripts/              # [Scripts] Tools & Preprocessing
-│   ├── preprocess.py     # Data Preprocessing (AFAD/AAF -> datasets/)
+│   ├── preprocess.py     # Data Preprocessing (AFAD -> datasets/)
 │   ├── plot_results.py   # Visualization
 │   └── benchmark_speed.py # Inference Speed Test
-├── datasets/             # [Data] Preprocessed Datasets (AFAD, AAF, UTKFace)
+├── datasets/             # [Data] Preprocessed Datasets (AFAD)
 ├── docs/                 # [Docs] Documentation
 │   ├── dataset_setup.md  # Dataset Setup Guide
 │   └── dataset_setup.md  # Dataset Setup Guide
-├── runs/                 # [Output] Training Logs & Checkpoints
+├── runs/                 # [Output] TensorBoard Logs
 ├── requirements.txt      # Dependencies List
 └── README.md             # Project README
 ```
@@ -77,8 +77,9 @@ Run the full training pipeline (Optimal configuration):
 ```bash
 python src/train.py --epochs 120 --freeze_backbone_epochs 5
 ```
-*   **Checkpoints**: Saved in `checkpoints/`
-*   **Logs**: Saved in `runs/FADE-Net_...` (Auto-named based on active modules)
+*   **Checkpoints**: Saved in `Root Directory` (e.g., `checkpoint_seed42_epoch_*.pth`)
+*   **CSV Logs**: Saved in `Root Directory` (e.g., `training_log_seed42.csv`)
+*   **TensorBoard**: Saved in `runs/FADE-Net_seed42_...` (Auto-named)
 
 ### 3. Evaluation
 ```bash
@@ -141,6 +142,20 @@ For broader context, we look at massive Transformer models evaluated on similar 
 | **FP-Age** [10] | 2023 | Wild | ~2.95 | **Attention (Heavy)** |
 
 > **Note**: While Transformer giants achieve slightly lower MAE (~2.6), FADE-Net (3.01) delivers **90% of the performance** at **5% of the computational cost**.
+
+## 📈 Visualization & Analysis (Seed 42)
+
+Representative performance metrics from our standard academic seed (Seed 42).
+
+| **Loss Convergence** | **MAE Performance** |
+| :---: | :---: |
+| ![Loss](plots/seed_42/1_loss_curve.png) | ![MAE](plots/seed_42/2_mae_curve.png) |
+| *Training vs Validation Loss* | *Mean Absolute Error (Test: 3.06)* |
+
+| **Learning Rate Schedule** | **Batch Stability** |
+| :---: | :---: |
+| ![LR](plots/seed_42/3_lr_schedule.png) | ![Stability](plots/seed_42/5_batch_stability.png) |
+| *Dynamic LR Adjustment* | *Training Stability Check* |
 
 ## 🔬 Academic Rigor & Reproducibility
 
