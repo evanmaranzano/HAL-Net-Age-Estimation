@@ -16,7 +16,7 @@
 
 **Target Performance:**
 *   **MAE**: **3.01** (Achieves state-of-the-art performance among lightweight models on AFAD in our setting)
-*   **Params**: ~6.8M (Lightweight)
+*   **Params**: ~5.22M (Lighter than vanilla MobileNetV3)
 *   **Speed**: Real-time on CPU/GPU
 
 ---
@@ -100,7 +100,7 @@ streamlit run src/web_demo.py
 
 | Rank | Method | Backbone | MAE (Lower is Better) | Params (M) | Note |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | **FADE-Net (Ours)** | **MobileNetV3** | **3.01 (Our Best)** | **~6.8M** | **SOTA-Level Performance** |
+| **1** | **FADE-Net (Ours)** | **MobileNetV3** | **3.01 (Our Best)** | **~5.22M** | **SOTA-Level Performance** |
 | 2 | **GRANET** [1] | ResNet-50 + Attn | 3.10 | ~25.5M | Previous SOTA |
 | 3 | **CDCNN** [2] | CNN (Multi-Task) | 3.11 | - | Cross-Dataset Training |
 | 4 | OR-CNN [3] | VGG-16 | 3.34 | 138M | Ordinal Regression |
@@ -108,7 +108,10 @@ streamlit run src/web_demo.py
 | 6 | CORAL [5] | ResNet-34 | 3.48 | ~21.8M | Rank Consistency |
 | 7 | DEX [6] | VGG-16 | 3.80 | 138M | Deep Expectation |
 
-> **Highlight**: FADE-Net achieves **Competitive Accuracy (3.01 vs 3.10)** while using **statistically fewer parameters (6.8M vs 25M+)**, setting a strong baseline for lightweight age estimation.
+> **Highlight**: FADE-Net achieves **Competitive Accuracy (3.01 vs 3.10)** while using **significantly fewer parameters (5.22M vs 25M+)**. Surprisingly, it is even **lighter than the vanilla MobileNetV3-Large (5.48M)** due to our optimized Task-Specific Head design.
+>
+> **💡 Why Lighter?**  
+> We removed the redundant 1000-class ImageNet classification head (~2.5M params) and replaced it with a **Task-Specific SPP Head**. While SPP captures richer spatial context (creating a 2816-dim feature vector), our optimized projection strategy focuses solely on regression features, successfully reducing total parameters by **~0.26M** compared to the original backbone while improving age estimation accuracy.
 
 [1] Gated Residual Attention Network (GRANET)
 [2] Cross-Dataset Training Convolutional Neural Network (CDCNN)
