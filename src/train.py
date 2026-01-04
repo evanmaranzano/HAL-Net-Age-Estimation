@@ -68,10 +68,30 @@ def save_checkpoint(state, filename="last_checkpoint.pth"):
 # ==========================================
 # 主训练函数
 # ==========================================
-def train(seed=42):
+def train(args):
     # Set seed first
+    seed = args.seed
     seed_everything(seed)
+    
     cfg = Config()
+    
+    # 🌟 CLI Overrides (Selection Space)
+    if args.epochs is not None:
+        cfg.epochs = args.epochs
+        print(f"🔧 CLI Override: Epochs -> {cfg.epochs}")
+        
+    if args.batch_size is not None:
+        cfg.batch_size = args.batch_size
+        print(f"🔧 CLI Override: Batch Size -> {cfg.batch_size}")
+        
+    if args.split is not None:
+        cfg.split_protocol = args.split
+        print(f"🔧 CLI Override: Split Protocol -> {cfg.split_protocol}")
+        
+    if args.freeze is not None:
+        cfg.freeze_backbone_epochs = args.freeze
+        print(f"🔧 CLI Override: Freeze Epochs -> {cfg.freeze_backbone_epochs}")
+
     dldl_tools = DLDLProcessor(cfg)
     
     # ==========================================
@@ -411,10 +431,79 @@ def train(seed=42):
     writer.close()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
+    import sys
+    
+    # Interactive Menu if no arguments provided
+    if len(sys.argv) == 1:
+        print("="*60)
+        print("🎮 FADE-Net Interactive Training Launcher")
+        print("="*60)
+        print("1. [Default]  Run Standard Benchmark (Seed 42, 90-5-5)")
+        print("2. [SOTA]     Run 2026 Academic Seed (Seed 2026, 90-5-5)")
+        print("3. [Custom]   Configure Manually (Seed, Split, Epochs...)")
+        print("q. [Quit]     Exit")
+        print("-" * 60)
+        
+        try:
+            choice = input("👉 Select mode [1-3]: ").strip().lower()
+            
+            if choice == '1' or choice == '':
+                print("\n🚀 Selected: Standard Benchmark (Seed 42)")
+                sys.argv.extend(['--seed', '42'])
+                
+            elif choice == '2':
+                print("\n🚀 Selected: SOTA 2026 (Seed 2026)")
+                sys.argv.extend(['--seed', '2026'])
+                
+            elif choice == '3':
+                print("\n🔧 Custom Configuration Mode:")
+                
+                # Seed
+                s = input("   - Seed [42]: ").strip()
+                if not s: s = '42'
+                sys.argv.extend(['--seed', s])
+                
+                # Split
+                print("   - Split Protocol:")
+                print("     1. 90-5-5 (Standard)")
+                print("     2. 72-8-20 (Strict)")
+                sp_choice = input("     Choice [1]: ").strip()
+                if sp_choice == '2':
+                    sys.argv.extend(['--split', '72-8-20'])
+                else:
+                    sys.argv.extend(['--split', '90-5-5'])
+                    
+                # Epochs
+                ep = input("   - Epochs [Default]: ").strip()
+                if ep:
+                    sys.argv.extend(['--epochs', ep])
+                    
+                # Freeze
+                fz = input("   - Freeze Epochs [Default]: ").strip()
+                if fz:
+                    sys.argv.extend(['--freeze', fz])
+                    
+            elif choice == 'q':
+                print("👋 Exiting.")
+                sys.exit(0)
+            else:
+                print("❌ Invalid choice. Using Default.")
+                sys.argv.extend(['--seed', '42'])
+                
+        except KeyboardInterrupt:
+            print("\n👋 Exiting.")
+            sys.exit(0)
+
+    parser = argparse.ArgumentParser(description="FADE-Net Training Launcher")
+    parser.add_argument('--seed', type=int, default=42, help='Random seed (default: 42)')
+    parser.add_argument('--epochs', type=int, help='Override total training epochs')
+    parser.add_argument('--batch_size', type=int, help='Override batch size')
+    parser.add_argument('--split', type=str, choices=['90-5-5', '72-8-20'], help="Select Split Protocol ('90-5-5' or '72-8-20')")
+    parser.add_argument('--freeze', type=int, dest='freeze', help='Override backbone freeze epochs')
+    parser.add_argument('--freeze_backbone_epochs', type=int, dest='freeze', help='Alias for --freeze') # Support README style
+    
     args = parser.parse_args()
     
     torch.backends.cudnn.benchmark = True
-    train(seed=args.seed)
+    train(args)
 

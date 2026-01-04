@@ -11,6 +11,7 @@ data/
 *.tar.gz
 *.rar
 # Training Outputs
+plots/
 runs/
 *.pth
 *.csv
