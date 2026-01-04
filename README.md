@@ -154,7 +154,7 @@ To ensure fair comparison and scientific potential, we adhere to strict academic
 
 ---
 
-## � References
+## 📚 References
 
 1.  **[GRANET]** A. Garain, R. Ray, P. K. Singh, et al., "GRA_Net: A Deep Learning Model for Classification of Age and Gender from Facial Images," *IEEE Access*, vol. 9, pp. 85672-85689, 2021.
 2.  **[CDCNN]** X. Wang, R. Guo, and C. Kambhamettu, "Deeply-Learned Feature for Age Estimation," in *IEEE Winter Conference on Applications of Computer Vision (WACV)*, 2015. (Best Guess for CDCNN context)
@@ -166,10 +166,10 @@ To ensure fair comparison and scientific potential, we adhere to strict academic
 8.  **[MobileViT]** S. Mehta and M. Rastegari, "MobileViT: Light-weight, General-purpose, and Mobile-friendly Vision Transformer," in *ICLR*, 2022.
 9.  **[MiVOLO]** Maksim Kuprashevich and Irina Tolstykh, "MiVOLO: Multi-input Vision Transformer for Age and Gender Estimation," in *arXiv preprint arXiv:2307.04616*, 2023.
 10. **[FP-Age]** H. Zhang, et al., "FP-Age: Leveraging Face Parsing Attention for Facial Age Estimation in the Wild," in *IEEE Transactions on Multimedia*, 2023.
-11. **[DCN-R34]** L. Geng, et al., "Portrait age recognition method based on improved ResNet and deformable convolution," *Electronic Research Archive (ERA)*, vol. 31, no. 8, pp. 4907-4924, 2023.
-12. **[MSDNN]** C. Kong, et al., "Facial Age Estimation Using Multi-Stage Deep Neural Networks," *Electronics*, vol. 13, no. 16, 2024.
+11. **[DCN-R34]** J. Xi, Z. Xu, Z. Yan, W. Liu, and Y. Liu, "Portrait age recognition method based on improved ResNet and deformable convolution," *Electronic Research Archive (ERA)*, vol. 31, no. 8, pp. 4907-4924, 2023.
+12. **[MSDNN]** S. E. Bekhouche, A. Benlamoudi, F. Dornaika, H. Telli, and Y. Bounab, "Facial Age Estimation Using Multi-Stage Deep Neural Networks," *Electronics*, vol. 13, no. 16, 2024.
 
 ---
 
-## �📝 License
+## 📜 License
 MIT License.
