@@ -3,6 +3,10 @@ import os
 import re
 import numpy as np
 import sys
+
+# Add project root to sys.path to allow importing from 'src'
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from src.config import Config
 
 # Define seeds from Shared Config
