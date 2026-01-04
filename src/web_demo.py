@@ -209,8 +209,11 @@ def load_model():
     # Updated instantiation to match src/model.py
     model = LightweightAgeEstimator(cfg).to(device)
     try:
-        # Try dynamic name first
-        model_path = os.path.join(ROOT_DIR, f"best_model_{cfg.project_name}.pth")
+        # Try dynamic name with Seed 42 first
+        model_path = os.path.join(ROOT_DIR, f"best_model_{cfg.project_name}_seed42.pth")
+        if not os.path.exists(model_path):
+             # Try dynamic name without seed
+            model_path = os.path.join(ROOT_DIR, f"best_model_{cfg.project_name}.pth")
         if not os.path.exists(model_path):
             # Fallback to generic name
             model_path = os.path.join(ROOT_DIR, "best_model.pth")

@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 import mediapipe as mp
 import time
+import os # Added for path joining
 import random
 import math
 import traceback
@@ -19,7 +20,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer, QPointF, QPoint
 from PyQt5.QtGui import QImage, QPixmap, QFont, QPainter, QColor, QPen, QBrush
 
 from model import LightweightAgeEstimator
-from config import Config
+from config import Config, ROOT_DIR # Added ROOT_DIR
 from utils import DLDLProcessor
 
 # ================= 样式表 =================
@@ -280,22 +281,53 @@ class WorkerThread(QThread):
         
         self.cfg = Config()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"🚀 后端设备: {self.device}")
+        print(f"🚀 后端设备: {self.device}", flush=True)
+        print("DEBUG: Initializing Model...", flush=True)
         
-        self.model = LightweightAgeEstimator(num_classes=self.cfg.num_classes).to(self.device)
         try:
-            checkpoint = torch.load("best_model.pth", map_location=self.device)
+            print("DEBUG: Instantiating LightweightAgeEstimator...", flush=True)
+            self.model = LightweightAgeEstimator(self.cfg).to(self.device)
+            
+            # 1. Try Specific Seed 42 first (Academic Baseline)
+            model_name = f"best_model_{self.cfg.project_name}_seed42.pth"
+            model_path = os.path.join(ROOT_DIR, model_name)
+            
+            if not os.path.exists(model_path):
+                # 2. Try Generic Project Name
+                model_name = f"best_model_{self.cfg.project_name}.pth"
+                model_path = os.path.join(ROOT_DIR, model_name)
+            
+            if not os.path.exists(model_path):
+                 # 3. Fallback
+                model_path = "best_model.pth"
+
+            print(f"⏳ Loading model from: {model_path}", flush=True)
+            checkpoint = torch.load(model_path, map_location=self.device)
             state_dict = checkpoint['model_state_dict'] if 'model_state_dict' in checkpoint else checkpoint
             self.model.load_state_dict(state_dict)
             self.model.eval()
-        except: pass
+            print("DEBUG: Model loaded successfully", flush=True)
+        except Exception as e:
+            print(f"❌ Model Initialization/Load failed: {e}", flush=True)
+            traceback.print_exc()
+            # If model failed to load, we might want to stop or continue with untrain model?
+            # Continuing might crash later. But let's let it run to see error.
+            if not hasattr(self, 'model'):
+                 print("CRITICAL: Model object was not created. Creating dummy...", flush=True)
+                 # Create a dummy model or exit? Exit is better.
+                 # But we possess no exit capability here easily without killing app.
+                 # Let's try to pass and see if user sees the error.
+            pass
 
+        print("DEBUG: Initializing DLDLProcessor...", flush=True)
         self.dldl_tools = DLDLProcessor(self.cfg)
+        print("DEBUG: Initializing Transforms...", flush=True)
         self.transform = transforms.Compose([
             transforms.Resize((self.cfg.img_size, self.cfg.img_size)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
+        print("DEBUG: Initializing MediaPipe...", flush=True)
         self.mp_face_detection = mp.solutions.face_detection
         self.mean_buffer = deque(maxlen=self.smooth_window)
         self.peak_buffer = deque(maxlen=self.smooth_window)

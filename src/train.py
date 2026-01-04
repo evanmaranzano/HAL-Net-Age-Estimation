@@ -1,4 +1,5 @@
 import os
+import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 # ==========================================
 # Reproducibility
 # ==========================================
-seed_everything(42)  # 固定种子
+# seed_everything(42)  # Moved to train function
 
 
 # ==========================================
@@ -67,7 +68,9 @@ def save_checkpoint(state, filename="last_checkpoint.pth"):
 # ==========================================
 # 主训练函数
 # ==========================================
-def train():
+def train(seed=42):
+    # Set seed first
+    seed_everything(seed)
     cfg = Config()
     dldl_tools = DLDLProcessor(cfg)
     
@@ -108,9 +111,10 @@ def train():
     # --- 断点续训逻辑 ---
     start_epoch = 0
     best_mae = float('inf')
-    checkpoint_path = os.path.join(ROOT_DIR, "last_checkpoint.pth")
-    # Dynamic naming: best_model_FADE-Net_HA_DLDL_MSFF_SPP.pth
-    best_model_path = os.path.join(ROOT_DIR, f"best_model_{cfg.project_name}.pth")
+    # Dynamic naming with Seed
+    checkpoint_path = os.path.join(ROOT_DIR, f"last_checkpoint_seed{seed}.pth")
+    # Dynamic naming: best_model_FADE-Net_HA_DLDL_MSFF_SPP_seed{seed}.pth
+    best_model_path = os.path.join(ROOT_DIR, f"best_model_{cfg.project_name}_seed{seed}.pth")
     print(f"🎯 Target Checkpoint Name: {best_model_path}")
     resume_training = False
 
@@ -135,13 +139,14 @@ def train():
         print("🚀 开始全新训练...")
 
     # 初始化 Logger
-    epoch_logger = CSVLogger(os.path.join(ROOT_DIR, 'training_log.csv'), 
+    # 初始化 Logger (Specific to seed)
+    epoch_logger = CSVLogger(os.path.join(ROOT_DIR, f'training_log_seed{seed}.csv'), 
                              ['Epoch', 'Train_Loss', 'Train_MAE', 'Val_Loss', 'Val_MAE', 'LR', 'Time', 'Is_Best'], 
                              resume=resume_training)
     batch_logger = CSVLogger(os.path.join(ROOT_DIR, 'batch_log.csv'), ['Epoch', 'Batch', 'Total_Loss', 'KL_Loss', 'L1_Loss', 'Rank_Loss'], resume=resume_training)
 
     # 初始化 TensorBoard Writer
-    log_dir = os.path.join(ROOT_DIR, "runs", f"{cfg.project_name}_{int(time.time())}")
+    log_dir = os.path.join(ROOT_DIR, "runs", f"{cfg.project_name}_seed{seed}_{int(time.time())}")
     writer = SummaryWriter(log_dir=log_dir)
     print(f"📈 TensorBoard 日志目录: {log_dir}")
 
@@ -400,12 +405,16 @@ def train():
     print(f"🏆 Final Test MAE: {final_test_mae:.4f}")
     
     # Save Final Result
-    with open(os.path.join(ROOT_DIR, "final_result.txt"), "w") as f:
+    with open(os.path.join(ROOT_DIR, f"final_result_seed{seed}.txt"), "w") as f:
         f.write(f"Test MAE: {final_test_mae:.4f}\n")
         
     writer.close()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--seed', type=int, default=42, help='Random seed for reproducibility')
+    args = parser.parse_args()
+    
     torch.backends.cudnn.benchmark = True
-    train()
+    train(seed=args.seed)
 

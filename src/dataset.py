@@ -409,8 +409,12 @@ def get_dataloaders(config):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     
+    dataset_names = []
+    if getattr(config, 'use_afad', True): dataset_names.append("AFAD")
+    if getattr(config, 'use_aaf', False): dataset_names.append("AAF")
+    
     print("=" * 60)
-    print("🚀 Loading Dataset (AFAD + AAF Only)")
+    print(f"🚀 Loading Dataset ({' + '.join(dataset_names)})")
     print("=" * 60)
     
     all_datasets = []

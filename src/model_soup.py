@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import os
 import glob
+import argparse # Added
 from config import Config
 from model import LightweightAgeEstimator
 from dataset import get_dataloaders
@@ -38,8 +39,8 @@ def validate(model, loader, device, dldl_tools):
             
     return mae_sum / count
 
-def average_weights(checkpoints, include_best=False, best_path="best_model.pth"):
-    if include_best and os.path.exists(best_path):
+def average_weights(checkpoints, include_best=False, best_path=None):
+    if include_best and best_path and os.path.exists(best_path):
         print(f"🌟 Adding {best_path} to the soup recipe!")
         checkpoints.append(best_path)
         
@@ -81,12 +82,16 @@ def average_weights(checkpoints, include_best=False, best_path="best_model.pth")
     return avg_state_dict
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--seed', type=int, default=42, help='Seed used for training')
+    args = parser.parse_args()
+
     cfg = Config()
     device = cfg.device
     print(f"⚙️ Device: {device}")
     
     # 1. Setup Model & Data
-    model = LightweightAgeEstimator(num_classes=cfg.num_classes).to(device)
+    model = LightweightAgeEstimator(config=cfg).to(device)
     _, val_loader, test_loader, _ = get_dataloaders(cfg)
     dldl_tools = DLDLProcessor(cfg)
     
@@ -116,7 +121,12 @@ def main():
 
     # 4. Strategy B: Soup + Best (Epochs + Best)
     print("\n🥘 Strategy B: SWA + Best Model")
-    soup_b_state = average_weights(checkpoints.copy(), include_best=True)
+    # 4. Strategy B: Soup + Best (Epochs + Best)
+    # 4. Strategy B: Soup + Best (Epochs + Best)
+    print("\n🥘 Strategy B: SWA + Best Model")
+    # Dynamic naming: best_model_FADE-Net_HA_DLDL_MSFF_SPP_seed{seed}.pth
+    best_model_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), f"best_model_{cfg.project_name}_seed{args.seed}.pth")
+    soup_b_state = average_weights(checkpoints.copy(), include_best=True, best_path=best_model_path)
     mae_b_val = 999.0
     mae_b_test = 999.0
     if soup_b_state:
@@ -129,11 +139,13 @@ def main():
     print("\n🥇 Baseline: Best Model Only")
     mae_best_val = 999.0
     mae_best_test = 999.0
-    if os.path.exists("best_model.pth"):
-        model.load_state_dict(torch.load("best_model.pth", map_location=device))
+    if os.path.exists(best_model_path):
+        model.load_state_dict(torch.load(best_model_path, map_location=device))
         mae_best_val = validate(model, val_loader, device, dldl_tools)
         mae_best_test = validate(model, test_loader, device, dldl_tools)
         print(f"✅ Best Model -> Val: {mae_best_val:.4f} | Test: {mae_best_test:.4f}")
+    else:
+        print(f"❌ Best Model not found at: {best_model_path}")
     
     # 6. Conclusion
     print("\n" + "="*55)
