@@ -15,7 +15,7 @@
 *   **E**stimation (Robust Age Inference)
 
 **Target Performance:**
-*   **MAE**: **3.01** (Achieves **Lightweight SOTA** performance on AFAD in our setting)
+*   **MAE**: **3.06** (Test) / **3.01** (Best Val) - Achieves **Lightweight SOTA** performance on AFAD
 *   **Params**: ~5.22M (Lighter than vanilla MobileNetV3)
 *   **Speed**: Real-time on CPU/GPU
 
@@ -123,14 +123,13 @@ Direct comparison with papers that explicitly benchmarked on AFAD in the last tw
 
 | Method | Year | Source | MAE | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **FADE-Net (Ours)** | **2025** | **-** | **3.01** | **Leading (Lightweight)** |
+| **FADE-Net (Ours)** | **3.06** | **~5.22M** | **Yes** | **Leading (Lightweight)** |
 | **DCN-R34** [11] | 2023 | *ERA Journal* | ~3.13 | Outperformed by FADE-Net |
 | **MSDNN** [12] | 2024 | *Electronics* | 3.25 | Outperformed by FADE-Net |
 | **ResNet-18** [Baseline] | - | *Standard* | ~3.67 | - |
 
-> **📝 Academic Note**: Baselines are cited from their respective papers or standard recent benchmarks. Direct comparison may vary slightly due to different split protocols (e.g., LOPO vs Stratified 90-5-5), but the general performance tiering remains valid.
-
-> **Verdict**: FADE-Net outperforms these recent 2023-2024 specific studies on the AFAD dataset, proving that a well-tuned lightweight model (MobileNetV3 + DLDL) remains superior to many newer but heavier or less-optimized architectures.
+> **📝 Academic Note**: Baselines are cited from their respective papers or standard recent benchmarks. Direct comparison may vary slightly due> **Note on Performance:** Our reported MAE of **3.06** is evaluated on the held-out Test Set (5%). We also observed a best Validation MAE of **3.01** during training.
+> **Note on Split Protocol:** Different papers use varying data splits. We use a stratified **90-5-5 split** (Train/Val/Test) to maximize training data utilization while ensuring a strictly isolated test set. Some baselines (e.g., CORAL, OR-CNN) imply an 80-20 split (often with internal validation reserved), effectively using ~72-80% for training. Despite our stricter test set isolation, FADE-Net achieves competitive SOTA performance.fic studies on the AFAD dataset, proving that a well-tuned lightweight model (MobileNetV3 + DLDL) remains superior to many newer but heavier or less-optimized architectures.
 
 ### 🌐 Comparison with General Transformer SOTA (Context)
 For broader context, we look at massive Transformer models evaluated on similar large-scale datasets (IMDB-Wiki):
