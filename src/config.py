@@ -13,7 +13,6 @@ class Config:
     
     # --- 1.1 📊 Split Protocol (New) ---
     # Options: '90-5-5' (Our Best) or '72-8-20' (Standard 80-20 implementation)
-    # Options: '90-5-5' (Our Best) or '72-8-20' (Standard 80-20 implementation)
     split_protocol = '90-5-5'
 
     # --- 1.2 🌱 Academic Seeds (with Meanings) ---
