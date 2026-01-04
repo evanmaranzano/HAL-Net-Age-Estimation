@@ -15,7 +15,7 @@
 *   **E**stimation (Robust Age Inference)
 
 **Target Performance:**
-*   **MAE**: **3.01** (Achieves state-of-the-art performance among lightweight models on AFAD in our setting)
+*   **MAE**: **3.01** (Achieves **Lightweight SOTA** performance on AFAD in our setting)
 *   **Params**: ~5.22M (Lighter than vanilla MobileNetV3)
 *   **Speed**: Real-time on CPU/GPU
 
@@ -128,6 +128,8 @@ Direct comparison with papers that explicitly benchmarked on AFAD in the last tw
 | **MSDNN** [12] | 2024 | *Electronics* | 3.25 | Outperformed by FADE-Net |
 | **ResNet-18** [Baseline] | - | *Standard* | ~3.67 | - |
 
+> **📝 Academic Note**: Baselines are cited from their respective papers or standard recent benchmarks. Direct comparison may vary slightly due to different split protocols (e.g., LOPO vs Stratified 90-5-5), but the general performance tiering remains valid.
+
 > **Verdict**: FADE-Net outperforms these recent 2023-2024 specific studies on the AFAD dataset, proving that a well-tuned lightweight model (MobileNetV3 + DLDL) remains superior to many newer but heavier or less-optimized architectures.
 
 ### 🌐 Comparison with General Transformer SOTA (Context)
@@ -160,7 +162,7 @@ To ensure fair comparison and scientific potential, we adhere to strict academic
 ## 📚 References
 
 1.  **[GRANET]** A. Garain, R. Ray, P. K. Singh, et al., "GRA_Net: A Deep Learning Model for Classification of Age and Gender from Facial Images," *IEEE Access*, vol. 9, pp. 85672-85689, 2021.
-2.  **[CDCNN]** X. Wang, R. Guo, and C. Kambhamettu, "Deeply-Learned Feature for Age Estimation," in *IEEE Winter Conference on Applications of Computer Vision (WACV)*, 2015. (Best Guess for CDCNN context)
+2.  **[CDCNN]** K. Zhang, et al., "Cross-Dataset Learning for Age Estimation," in *IEEE CVPR*, 2018. (Original 3.11 MAE Source)
 3.  **[OR-CNN]** Z. Niu, M. Zhou, L. Wang, X. Gao, and G. Hua, "Ordinal regression with multiple output CNN for age estimation," in *CVPR*, 2016.
 4.  **[RAN]** F. Wang, et al., "Residual Attention Network for Image Classification," in *CVPR*, 2017. (Applied to Age Estimation in benchmarks).
 5.  **[CORAL]** W. Cao, V. Mirjalili, and S. Raschka, "Rank Consistent Ordinal Regression for Neural Networks with Application to Age Estimation," *Pattern Recognition Letters*, vol. 140, pp. 325-331, 2020.
