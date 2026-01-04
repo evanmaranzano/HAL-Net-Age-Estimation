@@ -147,14 +147,14 @@ For broader context, we look at massive Transformer models evaluated on similar 
 To ensure fair comparison and scientific potential, we adhere to strict academic standards:
 
 1.  **Fixed Data Split**: The dataset partition (`train`/`val`/`test`) is generated once with `seed=42` and locked. All subsequent experiments use this exact same split to guarantee fair comparison.
-2.  **Multi-Seed Training**: We verify performance stability by running training with multiple random seeds (e.g., 42, 2024, 3407).
+2.  **Multi-Seed Training**: We verify performance stability by running training with multiple random seeds (e.g., 42, 2026, 3407).
 3.  **Reproducibility Script**:
     ```bash
     # Run academic benchmark (3 seeds)
     python scripts/run_academic_seeds.py --all
     
     # Run specific seed
-    python scripts/run_academic_seeds.py --seed 2024
+    python scripts/run_academic_seeds.py --seed 2026
     ```
 
 ---

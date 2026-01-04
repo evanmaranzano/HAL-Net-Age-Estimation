@@ -5,7 +5,7 @@ import numpy as np
 import sys
 
 # Define seeds
-SEEDS = [42, 2024, 3407]
+SEEDS = [42, 2026, 3407]
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PYTHON_EXE = sys.executable
 
