@@ -167,7 +167,7 @@ def train(args):
     epoch_logger = CSVLogger(os.path.join(ROOT_DIR, f'training_log_seed{seed}.csv'), 
                              ['Epoch', 'Train_Loss', 'Train_MAE', 'Val_Loss', 'Val_MAE', 'LR', 'Time', 'Is_Best'], 
                              resume=resume_training)
-    batch_logger = CSVLogger(os.path.join(ROOT_DIR, 'batch_log.csv'), ['Epoch', 'Batch', 'Total_Loss', 'KL_Loss', 'L1_Loss', 'Rank_Loss'], resume=resume_training)
+    batch_logger = CSVLogger(os.path.join(ROOT_DIR, f'batch_log_seed{seed}.csv'), ['Epoch', 'Batch', 'Total_Loss', 'KL_Loss', 'L1_Loss', 'Rank_Loss'], resume=resume_training)
 
     # 初始化 TensorBoard Writer
     log_dir = os.path.join(ROOT_DIR, "runs", f"{cfg.project_name}_seed{seed}_{int(time.time())}")
@@ -379,7 +379,7 @@ def train(args):
         # --- Manual SWA Strategy ---
         # Save checkpoints for the last 10 epochs
         if epoch >= cfg.epochs - 10:
-            swa_filename = os.path.join(ROOT_DIR, f"checkpoint_epoch_{epoch+1}.pth")
+            swa_filename = os.path.join(ROOT_DIR, f"checkpoint_seed{seed}_epoch_{epoch+1}.pth")
             print(f"💾 Saving SWA Checkpoint: {swa_filename}")
             save_checkpoint(checkpoint_dict, filename=swa_filename)
     
