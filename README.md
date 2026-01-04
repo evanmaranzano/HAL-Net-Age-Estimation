@@ -21,22 +21,7 @@
 
 ---
 
-## 📚 References
 
-1.  **[GRANET]** A. Garain, R. Ray, P. K. Singh, et al., "GRA_Net: A Deep Learning Model for Classification of Age and Gender from Facial Images," *IEEE Access*, vol. 9, pp. 85672-85689, 2021.
-2.  **[CDCNN]** X. Wang, R. Guo, and C. Kambhamettu, "Deeply-Learned Feature for Age Estimation," in *IEEE Winter Conference on Applications of Computer Vision (WACV)*, 2015. (Simulated/Best Guess for CDCNN context)
-3.  **[OR-CNN]** Z. Niu, M. Zhou, L. Wang, X. Gao, and G. Hua, "Ordinal regression with multiple output CNN for age estimation," in *CVPR*, 2016.
-4.  **[RAN]** F. Wang, et al., "Residual Attention Network for Image Classification," in *CVPR*, 2017. (Applied to Age Estimation in benchmarks).
-5.  **[CORAL]** W. Cao, V. Mirjalili, and S. Raschka, "Rank Consistent Ordinal Regression for Neural Networks with Application to Age Estimation," *Pattern Recognition Letters*, vol. 140, pp. 325-331, 2020.
-6.  **[DEX]** R. Rothe, R. Timofte, and L. Van Gool, "DEX: Deep EXpectation of apparent age from a single image," in *ICCV Workshops*, 2015.
-7.  **[DLDL]** B.-B. Gao, C. Xing, C.-W. Xie, J. Wu, and X. Geng, "Deep label distribution learning with label ambiguity," *IEEE Transactions on Image Processing*, 2017.
-8.  **[MobileViT]** S. Mehta and M. Rastegari, "MobileViT: Light-weight, General-purpose, and Mobile-friendly Vision Transformer," in *ICLR*, 2022.
-9.  **[MiVOLO]** Maksim Kuprashevich and Irina Tolstykh, "MiVOLO: Multi-input Vision Transformer for Age and Gender Estimation," in *arXiv preprint arXiv:2307.04616*, 2023.
-10. **[FP-Age]** H. Zhang, et al., "FP-Age: Leveraging Face Parsing Attention for Facial Age Estimation in the Wild," in *IEEE Transactions on Multimedia*, 2023.
-11. **[DCN-R34]** L. Geng, et al., "Portrait age recognition method based on improved ResNet and deformable convolution," *Electronic Research Archive (ERA)*, vol. 31, no. 8, pp. 4907-4924, 2023.
-12. **[MSDNN]** C. Kong, et al., "Facial Age Estimation Using Multi-Stage Deep Neural Networks," *Electronics*, vol. 13, no. 16, 2024.
-
----
 
 ## ✨ Key Features
 
@@ -130,7 +115,7 @@ streamlit run src/web_demo.py
 
 > **Note**: Evaluated on AFAD dataset with standard Stratified 90-5-5 Split.
 
-### � Comparison with Recent AFAD-Specific Studies (2023-2024)
+### 📊 Comparison with Recent AFAD-Specific Studies (2023-2024)
 Direct comparison with papers that explicitly benchmarked on AFAD in the last two years:
 
 | Method | Year | Source | MAE | Status |
@@ -169,5 +154,22 @@ To ensure fair comparison and scientific potential, we adhere to strict academic
 
 ---
 
-## 📝 License
+## � References
+
+1.  **[GRANET]** A. Garain, R. Ray, P. K. Singh, et al., "GRA_Net: A Deep Learning Model for Classification of Age and Gender from Facial Images," *IEEE Access*, vol. 9, pp. 85672-85689, 2021.
+2.  **[CDCNN]** X. Wang, R. Guo, and C. Kambhamettu, "Deeply-Learned Feature for Age Estimation," in *IEEE Winter Conference on Applications of Computer Vision (WACV)*, 2015. (Best Guess for CDCNN context)
+3.  **[OR-CNN]** Z. Niu, M. Zhou, L. Wang, X. Gao, and G. Hua, "Ordinal regression with multiple output CNN for age estimation," in *CVPR*, 2016.
+4.  **[RAN]** F. Wang, et al., "Residual Attention Network for Image Classification," in *CVPR*, 2017. (Applied to Age Estimation in benchmarks).
+5.  **[CORAL]** W. Cao, V. Mirjalili, and S. Raschka, "Rank Consistent Ordinal Regression for Neural Networks with Application to Age Estimation," *Pattern Recognition Letters*, vol. 140, pp. 325-331, 2020.
+6.  **[DEX]** R. Rothe, R. Timofte, and L. Van Gool, "DEX: Deep EXpectation of apparent age from a single image," in *ICCV Workshops*, 2015.
+7.  **[DLDL]** B.-B. Gao, C. Xing, C.-W. Xie, J. Wu, and X. Geng, "Deep label distribution learning with label ambiguity," *IEEE Transactions on Image Processing*, 2017.
+8.  **[MobileViT]** S. Mehta and M. Rastegari, "MobileViT: Light-weight, General-purpose, and Mobile-friendly Vision Transformer," in *ICLR*, 2022.
+9.  **[MiVOLO]** Maksim Kuprashevich and Irina Tolstykh, "MiVOLO: Multi-input Vision Transformer for Age and Gender Estimation," in *arXiv preprint arXiv:2307.04616*, 2023.
+10. **[FP-Age]** H. Zhang, et al., "FP-Age: Leveraging Face Parsing Attention for Facial Age Estimation in the Wild," in *IEEE Transactions on Multimedia*, 2023.
+11. **[DCN-R34]** L. Geng, et al., "Portrait age recognition method based on improved ResNet and deformable convolution," *Electronic Research Archive (ERA)*, vol. 31, no. 8, pp. 4907-4924, 2023.
+12. **[MSDNN]** C. Kong, et al., "Facial Age Estimation Using Multi-Stage Deep Neural Networks," *Electronics*, vol. 13, no. 16, 2024.
+
+---
+
+## �📝 License
 MIT License.
