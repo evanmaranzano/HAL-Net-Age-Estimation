@@ -24,7 +24,7 @@ def seed_everything(seed=42):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    print(f"🌱 Global Seed Set to {seed}")
+    print(f"[Info] Global Seed Set to {seed}")
 
 # ==========================================
 # 1. DLDL 核心处理类

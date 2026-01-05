@@ -162,14 +162,19 @@ Representative performance metrics from our standard academic seed (Seed 42).
 To ensure fair comparison and scientific potential, we adhere to strict academic standards:
 
 1.  **Fixed Data Split**: The dataset partition (`train`/`val`/`test`) is generated once with `seed=42` and locked. All subsequent experiments use this exact same split to guarantee fair comparison.
-2.  **Multi-Seed Training**: We verify performance stability by running training with multiple random seeds (e.g., 42, 3407, 2026, 1337, 1106).
+2.  **Multi-Seed Training**: We verify performance stability by running training with multiple random seeds (e.g., 42, 3407).
+    
+    | Seed | Test MAE | Status | Notes |
+    | :--- | :--- | :--- | :--- |
+    | **42** | **3.06** | ✅ Verified | Standard Academic Benchmark |
+    | **3407** | **3.07** | ✅ Verified | "The Golden Seed" (arXiv:2109.08203) |
 3.  **Reproducibility Script**:
     ```bash
-    # Run academic benchmark (3 seeds)
-    python scripts/run_academic_seeds.py --all
-    
-    # Run specific seed
-    python scripts/run_academic_seeds.py --seed 2026
+    # Run academic benchmark (Interactive / Batch)
+    python src/train.py
+
+    # Run specific seed directly
+    python src/train.py --seed 2026
     ```
 
 ---

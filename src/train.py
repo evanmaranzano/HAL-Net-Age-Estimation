@@ -435,78 +435,154 @@ def train(args):
 
 if __name__ == "__main__":
     import sys
-    
-    # Interactive Menu if no arguments provided
-    if len(sys.argv) == 1:
-        print("="*60)
-        print("🎮 FADE-Net Interactive Training Launcher")
-        print("="*60)
-        print("1. [Default]  Run Standard Benchmark (Seed 42, 90-5-5)")
-        print("2. [SOTA]     Run 2026 Academic Seed (Seed 2026, 90-5-5)")
-        print("3. [Custom]   Configure Manually (Seed, Split, Epochs...)")
-        print("q. [Quit]     Exit")
-        print("-" * 60)
-        
-        try:
-            choice = input("👉 Select mode [1-3]: ").strip().lower()
-            
-            if choice == '1' or choice == '':
-                print("\n🚀 Selected: Standard Benchmark (Seed 42)")
-                sys.argv.extend(['--seed', '42'])
-                
-            elif choice == '2':
-                print("\n🚀 Selected: SOTA 2026 (Seed 2026)")
-                sys.argv.extend(['--seed', '2026'])
-                
-            elif choice == '3':
-                print("\n🔧 Custom Configuration Mode:")
-                
-                # Seed
-                s = input("   - Seed [42]: ").strip()
-                if not s: s = '42'
-                sys.argv.extend(['--seed', s])
-                
-                # Split
-                print("   - Split Protocol:")
-                print("     1. 90-5-5 (Standard)")
-                print("     2. 72-8-20 (Strict)")
-                sp_choice = input("     Choice [1]: ").strip()
-                if sp_choice == '2':
-                    sys.argv.extend(['--split', '72-8-20'])
-                else:
-                    sys.argv.extend(['--split', '90-5-5'])
-                    
-                # Epochs
-                ep = input("   - Epochs [Default]: ").strip()
-                if ep:
-                    sys.argv.extend(['--epochs', ep])
-                    
-                # Freeze
-                fz = input("   - Freeze Epochs [Default]: ").strip()
-                if fz:
-                    sys.argv.extend(['--freeze', fz])
-                    
-            elif choice == 'q':
-                print("👋 Exiting.")
-                sys.exit(0)
-            else:
-                print("❌ Invalid choice. Using Default.")
-                sys.argv.extend(['--seed', '42'])
-                
-        except KeyboardInterrupt:
-            print("\n👋 Exiting.")
-            sys.exit(0)
+    import subprocess
+    import re
 
-    parser = argparse.ArgumentParser(description="FADE-Net Training Launcher")
-    parser.add_argument('--seed', type=int, default=42, help='Random seed (default: 42)')
-    parser.add_argument('--epochs', type=int, help='Override total training epochs')
-    parser.add_argument('--batch_size', type=int, help='Override batch size')
-    parser.add_argument('--split', type=str, choices=['90-5-5', '72-8-20'], help="Select Split Protocol ('90-5-5' or '72-8-20')")
-    parser.add_argument('--freeze', type=int, dest='freeze', help='Override backbone freeze epochs')
-    parser.add_argument('--freeze_backbone_epochs', type=int, dest='freeze', help='Alias for --freeze') # Support README style
+    # Helper function for Batch Mode (Run All)
+    def run_training_subprocess(seed):
+        print(f"\n🚀 Starting subprocess for seed {seed}...")
+        # Use sys.executable to ensure we use the same python interpreter
+        # Use sys.argv[0] to refer to this script (train.py)
+        cmd = [sys.executable, sys.argv[0], "--seed", str(seed)]
+        
+        # Pass through other common args if needed, or enforce defaults for benchmarks
+        # For 'Run All', we usually want standard settings, so we just pass seed.
+        
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8')
+        
+        mae = None
+        while True:
+            output = process.stdout.readline()
+            if output == '' and process.poll() is not None:
+                break
+            if output:
+                print(output.strip())
+                if "Final Test MAE:" in output:
+                    try:
+                        mae = float(output.strip().split(":")[-1].strip())
+                    except:
+                        pass
+        
+        rc = process.poll()
+        if rc != 0:
+            print(f"❌ Training failed for seed {seed}")
+            return None
+            
+        # Fallback check file
+        if mae is None:
+            # Assuming ROOT_DIR is defined and available
+            result_file = os.path.join(ROOT_DIR, f"final_result_seed{seed}.txt")
+            if os.path.exists(result_file):
+                with open(result_file, 'r') as f:
+                    content = f.read()
+                    match = re.search(r"Test MAE:\s*([\d\.]+)", content)
+                    if match:
+                        mae = float(match.group(1))
+        return mae
+
+    # --- CLI Handling ---
+    # Case 1: Arguments provided -> Run Training Immediately
+    if len(sys.argv) > 1:
+        parser = argparse.ArgumentParser(description="FADE-Net Training Launcher")
+        parser.add_argument('--seed', type=int, default=42, help='Random seed (default: 42)')
+        parser.add_argument('--epochs', type=int, help='Override total training epochs')
+        parser.add_argument('--batch_size', type=int, help='Override batch size')
+        parser.add_argument('--split', type=str, choices=['90-5-5', '72-8-20'], help="Select Split Protocol")
+        parser.add_argument('--freeze', type=int, dest='freeze', help='Override backbone freeze epochs')
+        parser.add_argument('--freeze_backbone_epochs', type=int, dest='freeze_alias', help='Alias for --freeze') 
+        
+        args = parser.parse_args()
+        
+        # Handle alias
+        if args.freeze_alias is not None:
+            args.freeze = args.freeze_alias
+
+        torch.backends.cudnn.benchmark = True
+        train(args)
+        sys.exit(0)
+
+    # Case 2: No Arguments -> Interactive Menu
+    print("="*60)
+    print("🎮 FADE-Net Interactive Training Launcher")
+    print("="*60)
+    print("1. [Default]  Run Standard Benchmark (Seed 42, 90-5-5)")
+    print("2. [SOTA]     Run 2026 Academic Seed (Seed 2026, 90-5-5)")
+    print("3. [Batch]    Run All Academic Seeds (42, 3407, 2026, 1337, 1106)")
+    print("4. [Custom]   Configure Manually")
+    print("q. [Quit]     Exit")
+    print("-" * 60)
     
-    args = parser.parse_args()
-    
-    torch.backends.cudnn.benchmark = True
-    train(args)
+    try:
+        choice = input("👉 Select mode [1-4/q]: ").strip().lower()
+        
+        if choice == '1' or choice == '':
+            print("\n🚀 Selected: Standard Benchmark (Seed 42)")
+            # Simulate args
+            class Args:
+                seed = 42
+                epochs = None
+                batch_size = None
+                split = None
+                freeze = None
+            train(Args())
+            
+        elif choice == '2':
+            print("\n🚀 Selected: SOTA 2026 (Seed 2026)")
+            class Args:
+                seed = 2026
+                epochs = None
+                batch_size = None
+                split = None
+                freeze = None
+            train(Args())
+
+        elif choice == '3':
+            print("\n🚀 Selected: Run All Academic Seeds")
+            seeds = [42, 3407, 2026, 1337, 1106]
+            results = {}
+            for s in seeds:
+                mae = run_training_subprocess(s)
+                if mae is not None:
+                    results[s] = mae
+            
+            print("\n" + "=" * 60)
+            print("📊 Final Batch Report")
+            print("=" * 60)
+            if results:
+                maes = list(results.values())
+                mean_mae = np.mean(maes)
+                std_mae = np.std(maes)
+                print(f"{'Seed':<10} | {'Test MAE':<10}")
+                print("-" * 25)
+                for s, m in results.items():
+                    print(f"{s:<10} | {m:.4f}")
+                print("-" * 25)
+                print(f"\n🏆 Average Test MAE: {mean_mae:.4f} ± {std_mae:.4f}")
+            else:
+                print("No successful runs.")
+
+        elif choice == '4':
+            print("\n🔧 Custom Configuration Mode:")
+            s = input("   - Seed [42]: ").strip() or '42'
+            sp_choice = input("   - Split (1: 90-5-5, 2: 72-8-20) [1]: ").strip()
+            split = '72-8-20' if sp_choice == '2' else '90-5-5'
+            ep = input("   - Epochs [Default]: ").strip()
+            fz = input("   - Freeze Epochs [Default]: ").strip()
+            
+            class Args:
+                seed = int(s)
+                split = split
+                epochs = int(ep) if ep else None
+                batch_size = None
+                freeze = int(fz) if fz else None
+            
+            train(Args())
+            
+        elif choice == 'q':
+            pass
+            
+    except KeyboardInterrupt:
+        print("\n👋 Exiting.")
+        sys.exit(0)
+
 
