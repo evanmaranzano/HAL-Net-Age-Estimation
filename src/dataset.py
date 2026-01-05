@@ -254,12 +254,20 @@ def calculate_lds_weights(ages, config):
     
     smooth_hist = gaussian_filter1d(hist, sigma=sigma)
     weights = 1.0 / (smooth_hist + 1e-5)
-    weights = weights / np.mean(weights)
+    
+    # ⚖️ [Critical Fix] Normalization: Only use classes that have actual samples
+    # This prevents 'empty' bins (0 samples) from dragging legitimate weights to near-zero
+    active_mask = hist > 0
+    if np.any(active_mask):
+        mean_weight = np.mean(weights[active_mask])
+    else:
+        mean_weight = np.mean(weights)
+        
+    weights = weights / mean_weight
     
     # 🛡️ Safety Clip: 防止稀缺样本权重过大导致梯度爆炸
-    # Max weight 10.0 means rare samples can have 10x impact, but not 100x.
     weights = np.clip(weights, 0.0, 10.0)
-    print(f"   -> Max Weight Clipped to: {np.max(weights):.2f}")
+    print(f"   -> Max Weight: {np.max(weights):.2f}, Mean (Active): {np.mean(weights[active_mask]):.2f}")
     
     weights_tensor = torch.tensor(weights, dtype=torch.float32).to(config.device)
     print("✅ LDS Weights Ready.")
