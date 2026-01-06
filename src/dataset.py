@@ -255,13 +255,9 @@ def calculate_lds_weights(ages, config):
     smooth_hist = gaussian_filter1d(hist, sigma=sigma)
     weights = 1.0 / (smooth_hist + 1e-5)
     
-    # ⚖️ [Critical Fix] Normalization: Only use classes that have actual samples
-    # This prevents 'empty' bins (0 samples) from dragging legitimate weights to near-zero
-    active_mask = hist > 0
-    if np.any(active_mask):
-        mean_weight = np.mean(weights[active_mask])
-    else:
-        mean_weight = np.mean(weights)
+    # ⚖️ [Reverted] Normalization: Use all bins (including empty ones) 
+    # to replicate original "buggy" but effective behavior.
+    mean_weight = np.mean(weights)
         
     weights = weights / mean_weight
     

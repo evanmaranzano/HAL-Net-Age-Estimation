@@ -92,7 +92,7 @@ python src/benchmark_speed.py     # Test FPS
 ## 💻 Web Demo
 Interactive web interface for real-time age estimation:
 ```bash
-streamlit run src/web_demo.py
+python -m streamlit run src/web_demo.py
 ```
 
 ---

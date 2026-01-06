@@ -376,7 +376,7 @@ def train(args):
         if ema:
             checkpoint_dict['ema_state_dict'] = ema.shadow
             
-        save_checkpoint(checkpoint_dict)
+        save_checkpoint(checkpoint_dict, filename=checkpoint_path)
         
         # --- Manual SWA Strategy ---
         # Save checkpoints for the last 10 epochs

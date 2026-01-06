@@ -48,8 +48,8 @@ class Config:
     use_adaptive_sigma = True
     sigma_min = 1.0              #  Revert to 1.0 for stability (Mixup Removed)
     sigma_max = 3.5
-    lambda_l1 = 0.1              # 📉 Plan C: Downgrade to auxiliary
-    lambda_rank = 1.0            # 👑 Plan C: Rank is King (BCE Version)
+    lambda_l1 = 0.1              # 📉 Oracle: 0.1 (But effectively ~0 due to LDS scaling)
+    lambda_rank = 1.0            # 👑 Oracle: 1.0 (The only active engine)
     
     # Label-Level Perturbation (Sigma Jitter)
     use_sigma_jitter = True
@@ -57,7 +57,7 @@ class Config:
     
     # 训练/优化
     batch_size = 128             # 🚀 Increased for A10 (24GB VRAM) utilization
-    learning_rate = 0.0003       # 保持 3e-4 (Optimizer Safety for V2 Weights)
+    learning_rate = 0.0003       #保持 3e-4 (Optimizer Safety for V2 Weights)
     weight_decay = 1e-4
     epochs = 120
     
