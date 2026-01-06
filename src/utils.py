@@ -256,10 +256,11 @@ class OrderRegressionLoss(nn.Module):
         # Register buffer to avoid device issues
         self.register_buffer('rank_indices', torch.arange(self.num_classes).float().unsqueeze(0)) # [1, K]
 
-    def forward(self, logits, true_ages):
+    def forward(self, logits, true_ages, target_dists=None):
         """
         logits: [B, K]
-        true_ages: [B]
+        true_ages: [B] (Not used if target_dists is provided)
+        target_dists: [B, K] (Optional, used for Mixup/DLDL)
         """
         # Ordinal Regression label encoding
         # Example: Age 3, K=5. Label=[1, 1, 1, 0, 0]
@@ -323,14 +324,22 @@ class OrderRegressionLoss(nn.Module):
         probs = F.softmax(logits, dim=1)
         cdf_pred = torch.cumsum(probs, dim=1)
         
-        # True CDF (Target Distribution 的 CDF)
-        # 我们可以直接用 Heaviside Step Function on True Age?
-        # 或者 DLDL Target 的 CDF
-        # 简单起见，用 True Age 的 Heaviside
-        cdf_target = utils_cdf(true_ages, self.num_classes, logits.device)
+        # True CDF Calculation
+        # V2: Supports Mixup/DLDL by using target_dists (PDF) -> cumsum -> CDF
+        if target_dists is not None:
+             cdf_target = torch.cumsum(target_dists, dim=1)
+        else:
+             # Fallback to Heaviside step function for scalar ages
+             cdf_target = utils_cdf(true_ages, self.num_classes, logits.device)
         
-        # EMD Loss (approx by L1 of CDFs)
-        loss_emd = F.mse_loss(cdf_pred, cdf_target) # MSE on CDF is stricter
+        # EMD Loss (approx by L1 of CDFs) or BCE on CDF probabilities
+        # User recommended BCE for better soft target support and gradients
+        # Since cdf_pred comes from Softmax -> Cumsum, it is in [0, 1].
+        # We use standard BCELoss (not WithLogits, as we don't have cumulative logits).
+        
+        # Stability: Clamp to avoid log(0)
+        cdf_pred = torch.clamp(cdf_pred, min=1e-7, max=1-1e-7)
+        loss_emd = F.binary_cross_entropy(cdf_pred, cdf_target, reduction='mean')
         return loss_emd
 
 def utils_cdf(age, num_classes, device):
@@ -395,8 +404,11 @@ class CombinedLoss(nn.Module):
         
         # 4. Rank Loss (CDF Loss / EMD)
         # 注意: OrderRegressionLoss 内部实现了 CDF MSE
+        # 4. Rank Loss (CDF Loss / EMD)
+        # 注意: OrderRegressionLoss 内部实现了 CDF MSE
         if self.use_dldl_v2 and self.rank_loss_fn is not None:
-            rank_loss = self.rank_loss_fn(logits, true_ages)
+             # Pass target_dists to support Mixup!
+            rank_loss = self.rank_loss_fn(logits, true_ages, target_dists)
             term_rank = self.lambda_rank * rank_loss
         else:
             rank_loss = torch.tensor(0.0).to(log_probs.device)
