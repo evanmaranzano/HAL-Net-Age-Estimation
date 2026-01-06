@@ -396,12 +396,13 @@ def get_dataloaders(config):
     
     # ✅ [Modified] Safe Random Erasing (Keypoint-Aware)
     if getattr(config, 'use_random_erasing', False):
-        print(f"🛡️ [Aug] Safe Random Erasing: ENABLED (p={config.re_prob}, scale=(0.02, 0.25))")
+        re_scale = (0.02, 0.15)
+        print(f"🛡️ [Aug] Safe Random Erasing: ENABLED (p={config.re_prob}, scale={re_scale})")
         # Custom Safe Erasing
         train_transforms_list.append(
             SafeRandomErasing(
                 p=config.re_prob, 
-                scale=(0.02, 0.15), 
+                scale=re_scale, 
                 ratio=(0.3, 3.3), 
                 value='random',
                 config=config
