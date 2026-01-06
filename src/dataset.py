@@ -263,6 +263,9 @@ def calculate_lds_weights(ages, config):
     
     # 🛡️ Safety Clip: 防止稀缺样本权重过大导致梯度爆炸
     weights = np.clip(weights, 0.0, 10.0)
+    
+    # Re-calculate mask for logging purposes only
+    active_mask = hist > 0
     print(f"   -> Max Weight: {np.max(weights):.2f}, Mean (Active): {np.mean(weights[active_mask]):.2f}")
     
     weights_tensor = torch.tensor(weights, dtype=torch.float32).to(config.device)
