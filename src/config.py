@@ -48,15 +48,15 @@ class Config:
     use_adaptive_sigma = True
     sigma_min = 1.0              #  Revert to 1.0 for stability (Mixup Removed)
     sigma_max = 3.5
-    lambda_l1 = 0.1
-    lambda_rank = 0.5            # ⚖️ Reverted to 0.5 (Original Best Setting with Mixup)
+    lambda_l1 = 1.0
+    lambda_rank = 0.2            # ⚖️ Reduced to 0.2 to prioritize regression
     
     # Label-Level Perturbation (Sigma Jitter)
     use_sigma_jitter = True
     sigma_jitter = 0.2
     
     # 训练/优化
-    batch_size = 64
+    batch_size = 128             # 🚀 Increased for A10 (24GB VRAM) utilization
     learning_rate = 0.0003       # 保持 3e-4 (Optimizer Safety for V2 Weights)
     weight_decay = 1e-4
     epochs = 120
@@ -70,7 +70,7 @@ class Config:
     
     # ✅ [Added] Random Erasing as Compensation
     use_random_erasing = True
-    re_prob = 0.5
+    re_prob = 0.2
     
     mixup_alpha = 0.2
     mixup_prob = 0.5
@@ -97,7 +97,7 @@ class Config:
     
     # 图片参数
     img_size = 224
-    num_workers = 4
+    num_workers = 6              # 🏎️ Optimized for CPU usage (avoid 100% load)
     early_stopping_patience = 999
 
     def __init__(self):

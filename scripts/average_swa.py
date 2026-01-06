@@ -13,7 +13,7 @@ def validate(model, loader, device, dldl_tools):
     model.eval()
     mae_sum = 0.0
     count = 0
-    rank_arange = torch.arange(81).to(device).float() # Hardcoded for 0-80
+    rank_arange = torch.arange(cfg.num_classes).to(device).float() # Categorical indices based on config
     
     with torch.no_grad():
         for images, _, true_ages in loader:

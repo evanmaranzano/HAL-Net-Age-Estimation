@@ -310,7 +310,7 @@ class SafeRandomErasing(object):
         area = img_h * img_w
 
         # Max retries to find a safe spot
-        for attempt in range(10):
+        for attempt in range(20):
             target_area = random.uniform(self.scale[0], self.scale[1]) * area
             aspect_ratio = random.uniform(self.ratio[0], self.ratio[1])
 
@@ -401,7 +401,7 @@ def get_dataloaders(config):
         train_transforms_list.append(
             SafeRandomErasing(
                 p=config.re_prob, 
-                scale=(0.02, 0.25), 
+                scale=(0.02, 0.15), 
                 ratio=(0.3, 3.3), 
                 value='random',
                 config=config
