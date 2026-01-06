@@ -138,23 +138,46 @@ class LightweightAgeEstimator(nn.Module):
         self.use_multi_scale = getattr(self.config, 'use_multi_scale', False)
         
         if self.use_multi_scale:
-            print("🔥 [Model] Multi-Scale Fusion: ENABLED (Texture-Semantics Dual-Stream)")
-            # 我们将从中间层提取特征
-            # MobileNetV3 Large Features:
-            # Block 6: 28x28, 80 ch (Exp: 240) -> Stride 8?
-            # Block 12: 14x14, 112 ch (Exp: 672) -> Stride 16?
-            # 自动探测通道数可能比较难，这里硬编码或者动态获取
-            # 假设我们用 Block 12 (Index 12)
-            self.fusion_idx = 12 
-            self.fusion_channels = 112 # MBV3-Large 默认
+            print("🔥 [Model] Multi-Scale Fusion: ENABLED (Dual-Stage: Texture & Structure)")
+            # 🌟 Plan D Improvement (Electronics 2024 inspired)
+            # Use Block 6 (28x28) for fine texture (wrinkles)
+            # Use Block 12 (14x14) for mid-level structure (shape)
             
-            # 使用 1x1 卷积调整通道并 Global Pool
-            self.fusion_project = nn.Sequential(
-                nn.Conv2d(self.fusion_channels, 128, 1),
+            # Index Check for MobileNetV3 Large
+            self.idx_shallow = 6   # 28x28, 40 ch (approx)
+            self.idx_mid = 12      # 14x14, 112 ch
+            
+            # Projectors to unify channels before fusion
+            # We project everything to 64 channels to keep it lightweight
+            fusion_dim = 64
+            
+            # Shallow Projector: 40 -> 64
+            # Note: Input channel 40 is an estimate, we might need dynamic detection or trust standard arch
+            # MBV3-Large block 6 output is 40 channels.
+            self.project_shallow = nn.Sequential(
+                nn.Conv2d(40, fusion_dim, 1, bias=False),
+                nn.BatchNorm2d(fusion_dim),
+                nn.ReLU(inplace=True)
+            )
+            
+            # Mid Projector: 112 -> 64
+            self.project_mid = nn.Sequential(
+                nn.Conv2d(112, fusion_dim, 1, bias=False),
+                nn.BatchNorm2d(fusion_dim),
+                nn.ReLU(inplace=True)
+            )
+            
+            # Attention Weighted Fusion (Simple SE-like weight)
+            # Weights for [Shallow, Mid]
+            self.fusion_weight = nn.Parameter(torch.ones(2, dtype=torch.float32), requires_grad=True)
+            
+            # Final Projector after fusing (64 -> 128 to match old interface)
+            self.fusion_out = nn.Sequential(
+                nn.Conv2d(fusion_dim, 128, 1, bias=False),
                 nn.AdaptiveAvgPool2d(1),
                 nn.Flatten()
             )
-            # 融合后的维度
+            
             classifier_input_dim = 1280 + 128
         else:
             print("ℹ️ [Model] Multi-Scale Fusion: DISABLED")
@@ -229,24 +252,46 @@ class LightweightAgeEstimator(nn.Module):
         x_shallow = x
         feat_texture = None
         
-        # 需要知道遍历到哪里。
-        # 如果 MSFF 关闭，fusion_idx 不存在。
-        target_idx = getattr(self, 'fusion_idx', -1)
+        # Capture Plan D Indices
+        target_idx_mid = getattr(self, 'idx_mid', 12)
+        target_idx_shallow = getattr(self, 'idx_shallow', 6)
+        
+        feat_shallow = None
+        feat_mid = None
         
         if self.use_multi_scale:
-             # Part 1: Initial -> Stride 16
-            for i, layer in enumerate(self.backbone.features):
-                x_shallow = layer(x_shallow)
-                if i == target_idx:
-                    feat_texture = x_shallow # Capture Texture
-                    # Project Texture
-                    feat_texture = self.fusion_project(feat_texture) # [B, 128]
-                    break 
-                    
-            # Part 2: Deep 
-            x_deep = x_shallow
-            for i in range(target_idx + 1, len(self.backbone.features)):
-                 x_deep = self.backbone.features[i](x_deep)
+             # Part 1: Iterate through backbone
+             for i, layer in enumerate(self.backbone.features):
+                 x_shallow = layer(x_shallow)
+                 
+                 # Capture Shallow (Block 6)
+                 if i == target_idx_shallow:
+                     feat_shallow = x_shallow 
+                     
+                 # Capture Mid (Block 12)
+                 if i == target_idx_mid:
+                     feat_mid = x_shallow
+                     break 
+                     
+             # --- Plan D Fusion Logic ---
+             # 1. Project Channels to 64
+             f_s = self.project_shallow(feat_shallow) 
+             f_m = self.project_mid(feat_mid)         
+             
+             # 2. Downsample Shallow to match Mid (28->14)
+             f_s_down = nn.functional.adaptive_avg_pool2d(f_s, (14, 14))
+             
+             # 3. Attention Weighted Fusion
+             w = torch.nn.functional.softmax(self.fusion_weight, dim=0)
+             f_fused = w[0] * f_s_down + w[1] * f_m
+             
+             # 4. Final Projection -> 128
+             feat_texture = self.fusion_out(f_fused) # [B, 128]
+
+             # Part 2: Deep Continuation
+             x_deep = x_shallow
+             for i in range(target_idx_mid + 1, len(self.backbone.features)):
+                  x_deep = self.backbone.features[i](x_deep)
         else:
             # Simple Forward
             x_deep = self.backbone.features(x)
@@ -266,47 +311,7 @@ class LightweightAgeEstimator(nn.Module):
             x_sem = torch.cat([p1, p2, p3], dim=1) # [B, 2688]
         else:
             # Standard GAP + Project
-            # Original MobileNetV3 Project: 960 -> 1280
-            # Since we replaced backbone.classifier with Identity, we need to manually do the projection if we want strictly mbv3 behavior
-            # But here we can simpler: GAP -> Linear if we wanted.
-            # actually existing logic for Single Stream was:
-            # backbone.classifier(flattened)
-            # backbone.classifier used to be: Linear(960, 1280) -> Act -> Linear(1280, Num)
-            # But now we set backbone.classifier = Identity() in init if SPP is ON logic reached...
-            
-            # Wait, if use_spp is False, we need to respect the old logic or redefine it.
-            # To keep it clean:
-            # GAP -> 960
             x_pool = self.backbone.avgpool(x_deep).flatten(1) # [B, 960]
-            
-            # Standard Projection (Optional, but good for capacity)
-            # We can map 960 -> 1280 to match MSFF logic
-            # Or just use 960. 
-            # Let's simple projection matrix or just use x_pool.
-            # Previous MSFF logic assumed 1280 (from backbone.classifier[0]).
-            # Let's implement a simple projection to 1280 if SPP is off, to match expected dim
-            # But wait, classifier_input_dim is 1280 if SPP off.
-            # Does x_pool (960) match 1280? No.
-            # We need a bridge.
-            # Simplified: Just pad? No. 
-            # Re-instantiate a linear layer?
-            
-            # ⚠️  CRITICAL: If SPP is False, we need to ensure dimensions match.
-            # Let's assume SPP is always preferred. 
-            # If not, we bridge 960 -> 1280 manually here if strict.
-            # Or better: Just change classifier_input_dim to 960 if SPP is False and MSFF is False.
-            # If MSFF Is True (1280+128), and SPP is False...
-            # The Deep branch needs to provide 1280.
-            # Let's verify init logic.
-            
-            # Correction: 
-            # If SPP=False:
-            # classifier_input_dim = 1280 (set by MSFF block)
-            # So x_sem MUST be 1280.
-            # x_deep is 960.
-            # We need a 960->1280 layer.
-            # Let's just use a dedicated Linear layer for this case to stay safe.
-            # Use the pre-initialized projector
             x_sem = self.project_960_1280(x_pool)
 
         # --- Fusion ---
@@ -318,4 +323,3 @@ class LightweightAgeEstimator(nn.Module):
         # Result
         logits = self.final_head(x_final)
         return logits
-

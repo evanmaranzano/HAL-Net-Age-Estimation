@@ -48,8 +48,8 @@ class Config:
     use_adaptive_sigma = True
     sigma_min = 1.0              #  Revert to 1.0 for stability (Mixup Removed)
     sigma_max = 3.5
-    lambda_l1 = 1.0
-    lambda_rank = 0.2            # ⚖️ Reduced to 0.2 to prioritize regression
+    lambda_l1 = 0.1              # 📉 Plan C: Downgrade to auxiliary
+    lambda_rank = 1.0            # 👑 Plan C: Rank is King (BCE Version)
     
     # Label-Level Perturbation (Sigma Jitter)
     use_sigma_jitter = True
