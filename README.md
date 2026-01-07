@@ -194,6 +194,12 @@ To ensure fair comparison and scientific potential, we adhere to strict academic
 10. **[FP-Age]** H. Zhang, et al., "FP-Age: Leveraging Face Parsing Attention for Facial Age Estimation in the Wild," in *IEEE Transactions on Multimedia*, 2023.
 11. **[DCN-R34]** J. Xi, Z. Xu, Z. Yan, W. Liu, and Y. Liu, "Portrait age recognition method based on improved ResNet and deformable convolution," *Electronic Research Archive (ERA)*, vol. 31, no. 8, pp. 4907-4924, 2023.
 12. **[MSDNN]** S. E. Bekhouche, A. Benlamoudi, F. Dornaika, H. Telli, and Y. Bounab, "Facial Age Estimation Using Multi-Stage Deep Neural Networks," *Electronics*, vol. 13, no. 16, 2024.
+13. **[MobileNetV3]** HOWARD A, SANDLER M, CHU G, et al. "Searching for MobileNetV3," in *Proc. IEEE/CVF ICCV*, 2019, pp. 1314-1324.
+14. **[CoordAtt]** HOU Q, ZHOU D, FENG J. "Coordinate attention for efficient mobile network design," in *Proc. IEEE/CVF CVPR*, 2021, pp. 13713-13722.
+15. **[SPP]** HE K, ZHANG X, REN S, et al. "Spatial pyramid pooling in deep convolutional networks for visual recognition," *IEEE Trans. Pattern Anal. Mach. Intell.*, vol. 37, no. 9, pp. 1904-1916, 2015.
+16. **[LDL]** GENG X. "Label distribution learning," *IEEE Trans. Knowl. Data Eng.*, vol. 28, no. 7, pp. 1734-1748, 2016.
+17. **[Eval-Practice]** PAPLHAM J, BOCHINSKI E, SIKORA T. "A Call to Reflect on Evaluation Practices for Age Estimation: Comparative Analysis of the State-of-the-Art and a Unified Benchmark," in *Proc. IEEE/CVF CVPR*, 2024, pp. 1-11.
+18. **[Review-CN]** 王一帆, 孙辉, 张静, 等. "基于深度学习的人脸年龄估计研究综述," *计算机工程与应用*, vol. 59, no. 3, pp. 1-15, 2023.
 
 ---
 
