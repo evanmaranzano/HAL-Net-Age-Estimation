@@ -339,7 +339,10 @@ class OrderRegressionLoss(nn.Module):
         
         # Stability: Clamp to avoid log(0)
         cdf_pred = torch.clamp(cdf_pred, min=1e-7, max=1-1e-7)
-        loss_emd = F.binary_cross_entropy(cdf_pred, cdf_target, reduction='mean')
+        
+        # ⚡ AMP Safety: BCE is unstable in FP16, execute in FP32
+        with torch.cuda.amp.autocast(enabled=False):
+            loss_emd = F.binary_cross_entropy(cdf_pred.float(), cdf_target.float(), reduction='mean')
         return loss_emd
 
 def utils_cdf(age, num_classes, device):

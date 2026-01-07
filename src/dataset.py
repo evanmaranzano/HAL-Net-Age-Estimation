@@ -496,12 +496,12 @@ def get_dataloaders(config):
     test_set = SubsetWithTransform(test_subset, transform=val_transform)
     
     train_loader = DataLoader(train_set, batch_size=config.batch_size, shuffle=True, 
-                              num_workers=config.num_workers, pin_memory=True, collate_fn=my_collate_fn)
+                              num_workers=config.num_workers, pin_memory=True, collate_fn=my_collate_fn, persistent_workers=True)
                               
     val_loader = DataLoader(val_set, batch_size=config.batch_size, shuffle=False, 
-                            num_workers=config.num_workers, pin_memory=True, collate_fn=my_collate_fn)
+                            num_workers=config.num_workers, pin_memory=True, collate_fn=my_collate_fn, persistent_workers=True)
                             
     test_loader = DataLoader(test_set, batch_size=config.batch_size, shuffle=False, 
-                             num_workers=config.num_workers, pin_memory=True, collate_fn=my_collate_fn)
+                             num_workers=config.num_workers, pin_memory=True, collate_fn=my_collate_fn, persistent_workers=True)
                              
     return train_loader, val_loader, test_loader, class_weights

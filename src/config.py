@@ -46,8 +46,8 @@ class Config:
     
     # DLDL-v2 动态微调参数
     use_adaptive_sigma = True
-    sigma_min = 1.0              #  Revert to 1.0 for stability (Mixup Removed)
-    sigma_max = 3.5
+    sigma_min = 2.0              # 🛡️ Oracle: Increased to 2.0 (Flatter distributions)
+    sigma_max = 4.0              # 🛡️ Oracle: Increased to 4.0 (Balanced smoothing, not too flat)
     lambda_l1 = 0.1              # 📉 Oracle: 0.1 (But effectively ~0 due to LDS scaling)
     lambda_rank = 1.0            # 👑 Oracle: 1.0 (The only active engine)
     
@@ -58,21 +58,21 @@ class Config:
     # 训练/优化
     batch_size = 128             # 🚀 Increased for A10 (24GB VRAM) utilization (AMP Enabled)
     learning_rate = 0.0003       #保持 3e-4 (Optimizer Safety for V2 Weights)
-    weight_decay = 1e-4
+    weight_decay = 4e-4          # 📉 Oracle: 4e-4 (Stronger regularization)
     epochs = 120
     
     # 训练策略
     freeze_backbone_epochs = 5
     
     # 数据增强与正则化
-    dropout = 0.2
+    dropout = 0.3                # 🛡️ Oracle: 0.3 (Safe increment for MobileNetV3)
     use_mixup = True             # ✅ Re-enabled: Essential for Manifold Smoothing & Generalization
     
     # ✅ [Added] Random Erasing as Compensation
     use_random_erasing = True
     re_prob = 0.2
     
-    mixup_alpha = 0.2
+    mixup_alpha = 0.5            # 🐸 Oracle: 0.5 (Stronger Mixup)
     mixup_prob = 0.5
     
     use_ema = True
@@ -93,7 +93,7 @@ class Config:
     use_reweighting = True
     use_alignment = False
     
-    lds_sigma = 3                # 📉 窗口收紧至 3
+    lds_sigma = 4                # 📉 Oracle: 4 (Stronger LDS smoothing)
     
     # 图片参数
     img_size = 224
