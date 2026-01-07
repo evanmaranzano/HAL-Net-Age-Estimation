@@ -4,6 +4,8 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)
 ![Performance](https://img.shields.io/badge/Performance-SOTA_Level-success)
 
+[English](README.md) | [中文文档](README_zh.md)
+
 ## 📖 Project Overview
 
 **FADE-Net** (formerly HAL-Net) is an **optimized iteration** of our lightweight age estimation system. It integrates **Multi-Scale Feature Fusion**, **Spatial Pyramid Pooling**, and **Hybrid Attention** to achieve "Server-level Accuracy on Edge Devices".
