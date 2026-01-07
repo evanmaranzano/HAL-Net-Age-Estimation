@@ -128,6 +128,9 @@ def train(args):
         weight_decay=cfg.weight_decay 
     )
     
+    # ⚡ AMP Scaler
+    scaler = torch.cuda.amp.GradScaler()
+    
     # 6. 调度器
     # Accelerated Decay: Reach min_lr at Epoch 100, then stay low for 20 epochs (Stable Phase)
     scheduler = CosineAnnealingLR(optimizer, T_max=100, eta_min=cfg.learning_rate * 0.01)
@@ -240,17 +243,24 @@ def train(args):
                 )
             
             optimizer.zero_grad()
-            logits = model(images)
-            log_probs = F.log_softmax(logits, dim=1)
             
-            # 计算 Combined Loss
-            loss, loss_kl, loss_l1, loss_rank = criterion(log_probs, target_dists, true_ages, logits)
+            # ⚡ AMP Forward
+            with torch.cuda.amp.autocast():
+                logits = model(images)
+                log_probs = F.log_softmax(logits, dim=1)
+                
+                # 计算 Combined Loss
+                loss, loss_kl, loss_l1, loss_rank = criterion(log_probs, target_dists, true_ages, logits)
             
-            loss.backward()
-            # 梯度裁剪 (Gradient Clipping)
+            # ⚡ AMP Backward
+            scaler.scale(loss).backward()
+            
+            # Unscale before clipping
+            scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             
-            optimizer.step()
+            scaler.step(optimizer)
+            scaler.update()
             
             # 更新 EMA
             if ema:

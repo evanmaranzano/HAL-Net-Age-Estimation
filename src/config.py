@@ -56,7 +56,7 @@ class Config:
     sigma_jitter = 0.2
     
     # 训练/优化
-    batch_size = 128             # 🚀 Increased for A10 (24GB VRAM) utilization
+    batch_size = 128             # 🚀 Increased for A10 (24GB VRAM) utilization (AMP Enabled)
     learning_rate = 0.0003       #保持 3e-4 (Optimizer Safety for V2 Weights)
     weight_decay = 1e-4
     epochs = 120
@@ -97,7 +97,7 @@ class Config:
     
     # 图片参数
     img_size = 224
-    num_workers = 6              # 🏎️ Optimized for CPU usage (avoid 100% load)
+    num_workers = 4              # 🏎️ Optimized for CPU usage (avoid 100% load)
     early_stopping_patience = 999
 
     def __init__(self):
