@@ -331,6 +331,9 @@ class OrderRegressionLoss(nn.Module):
         else:
              # Fallback to Heaviside step function for scalar ages
              cdf_target = utils_cdf(true_ages, self.num_classes, logits.device)
+             
+        # 🛡️ Protection: Clamp target to [0, 1] to prevent float errors triggering BCE assert
+        cdf_target = torch.clamp(cdf_target, 0.0, 1.0)
         
         # EMD Loss (approx by L1 of CDFs) or BCE on CDF probabilities
         # User recommended BCE for better soft target support and gradients
@@ -361,6 +364,42 @@ def utils_cdf(age, num_classes, device):
     # Actually: 0 0 0 ... until age, then 1.
     return (indices >= age.unsqueeze(1)).float()
 
+# ==========================================
+# 5. Mean-Variance Loss (The Nuclear Weapon)
+# ==========================================
+class MeanVarianceLoss(nn.Module):
+    def __init__(self, lambda_var=0.05, start_age=0, end_age=80, device='cuda'):
+        super().__init__()
+        self.lambda_var = lambda_var
+        self.start_age = start_age
+        self.end_age = end_age
+        # We will move this to the correct device in forward or register as buffer
+        self.register_buffer('age_centers', torch.arange(start_age, end_age + 1, dtype=torch.float32))
+
+    def forward(self, logits, targets):
+        # 1. 计算预测分布 P(x)
+        probs = F.softmax(logits, dim=1)
+        
+        # 2. 计算预测均值 (Expectation)
+        # shape: [batch_size, 1] -> [batch_size]
+        mean_tensor = torch.sum(probs * self.age_centers, dim=1)
+        
+        # 3. Mean Loss (L2 reg)
+        # targets 也是浮点数 (Mixup后)
+        # targets might be shape [B] or [B, 1]
+        if targets.dim() > 1:
+             targets = targets.squeeze()
+        l_mean = F.mse_loss(mean_tensor, targets)
+        
+        # 4. Variance Loss (让分布更尖)
+        # Var = E[(x - mean)^2] = sum( P_i * (i - mean)^2 )
+        # broadcasting: [1, 81] - [BS, 1] = [BS, 81]
+        variance = torch.sum(probs * (self.age_centers[None, :] - mean_tensor[:, None]) ** 2, dim=1)
+        l_var = torch.mean(variance)
+        
+        # 总损失
+        return l_mean + self.lambda_var * l_var
+
 class CombinedLoss(nn.Module):
     def __init__(self, config, weights=None):
         super(CombinedLoss, self).__init__()
@@ -380,6 +419,16 @@ class CombinedLoss(nn.Module):
         else:
             self.rank_loss_fn = None
             # print("ℹ️ [Loss] Ranking Loss: DISABLED (Standard L1+KL)")
+            
+        # 🌟 Mean-Variance Loss Integration
+        self.use_mv_loss = getattr(config, 'use_mv_loss', False)
+        if self.use_mv_loss:
+            self.lambda_mv = getattr(config, 'lambda_mv', 0.05)
+            self.mv_loss_fn = MeanVarianceLoss(lambda_var=0.1, # Internal alpha for Variance term
+                                               start_age=config.min_age, 
+                                               end_age=config.max_age,
+                                               device=config.device)
+            # print("☢️ [Loss] Mean-Variance Loss: ENABLED")
 
     def forward(self, log_probs, target_dists, true_ages, logits):
         # 1. KL 散度 (Main Loss)
@@ -407,8 +456,6 @@ class CombinedLoss(nn.Module):
         
         # 4. Rank Loss (CDF Loss / EMD)
         # 注意: OrderRegressionLoss 内部实现了 CDF MSE
-        # 4. Rank Loss (CDF Loss / EMD)
-        # 注意: OrderRegressionLoss 内部实现了 CDF MSE
         if self.use_dldl_v2 and self.rank_loss_fn is not None:
              # Pass target_dists to support Mixup!
             rank_loss = self.rank_loss_fn(logits, true_ages, target_dists)
@@ -416,7 +463,17 @@ class CombinedLoss(nn.Module):
         else:
             rank_loss = torch.tensor(0.0).to(log_probs.device)
             term_rank = 0.0
+            
+        # 5. Mean-Variance Loss
+        loss_mv = torch.tensor(0.0).to(log_probs.device)
+        if self.use_mv_loss:
+            # MV Loss internal logic: L_mean + lambda_var * L_var
+            # We add it with a global weight 'lambda_mv'
+            loss_mv = self.mv_loss_fn(logits, true_ages)
+            term_mv = self.lambda_mv * loss_mv
+        else:
+            term_mv = 0.0
         
         # 总损失
-        total_loss = w_kl + self.lambda_l1 * l1 + term_rank
+        total_loss = w_kl + self.lambda_l1 * l1 + term_rank + term_mv
         return total_loss, w_kl.item(), l1.item(), rank_loss.item()

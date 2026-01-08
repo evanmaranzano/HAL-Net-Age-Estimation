@@ -223,6 +223,19 @@ def train(args):
             # Optional: Lower LR slightly? Or let cosine scheduler handle it.
             # Cosine is already decaying, so it's fine.
 
+        # 🌟 [Online Hard Distillation] Disable Regularization at later stages
+        if epoch >= 105:
+            if cfg.use_mixup:
+                print(f"🔥 [Epoch {epoch+1}] Hard Distillation Mode: Disabling Mixup!")
+                cfg.use_mixup = False
+                
+            # Disable Random Erasing dynamically by modifying the transform instance in place
+            if hasattr(train_loader.dataset, 'transform') and hasattr(train_loader.dataset.transform, 'transforms'):
+                for t in train_loader.dataset.transform.transforms:
+                    if 'SafeRandomErasing' in str(type(t)) and t.p > 0:
+                        print(f"🔥 [Epoch {epoch+1}] Hard Distillation Mode: Disabling Random Erasing!")
+                        t.p = 0.0
+
         # --- 1. 训练 ---
         model.train()
         train_loss = 0.0

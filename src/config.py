@@ -21,7 +21,8 @@ class Config:
         3407: '"Torch.manual_seed(3407) is all you need" (arXiv:2109.08203)',
         2026: "Current Year (Modernity Check)",
         1337: "Leet (Elite)",
-        1106: "Special Dedication <3 (Randomly Sampled w.r.t our hearts)"
+        1106: "Special Dedication <3 (Randomly Sampled w.r.t our hearts)",
+        2027: "The Unshackled Run (Oracle Optimized)"
     }
 
     # --- 2. 🚀 动态项目命名逻辑 (Robust & Dynamic) ---
@@ -33,6 +34,7 @@ class Config:
         if self.use_dldl_v2:          tags.append("DLDL")
         if self.use_multi_scale:      tags.append("MSFF")
         if self.use_spp:              tags.append("SPP")
+        if getattr(self, 'use_mv_loss', False): tags.append("MV")
         
         suffix = "_".join(tags) if tags else "Baseline"
         return f"{base}_{suffix}"
@@ -46,10 +48,14 @@ class Config:
     
     # DLDL-v2 动态微调参数
     use_adaptive_sigma = True
-    sigma_min = 2.0              # 🛡️ Oracle: Increased to 2.0 (Flatter distributions)
-    sigma_max = 4.0              # 🛡️ Oracle: Increased to 4.0 (Balanced smoothing, not too flat)
+    sigma_min = 1.0              # 🛡️ Oracle: Reduced to 1.0 (Sharpened)
+    sigma_max = 3.0              # 🛡️ Oracle: Reduced to 3.0 (Less tolerance)
     lambda_l1 = 0.1              # 📉 Oracle: 0.1 (But effectively ~0 due to LDS scaling)
-    lambda_rank = 1.0            # 👑 Oracle: 1.0 (The only active engine)
+    lambda_rank = 0.5            # 👑 Adjusted: Lowered to 0.5 to give MV loss room
+    
+    # Mean-Variance Loss (Nuclear Weapon)
+    use_mv_loss = True
+    lambda_mv = 0.1
     
     # Label-Level Perturbation (Sigma Jitter)
     use_sigma_jitter = True
@@ -58,18 +64,18 @@ class Config:
     # 训练/优化
     batch_size = 128             # 🚀 Increased for A10 (24GB VRAM) utilization (AMP Enabled)
     learning_rate = 0.0003       #保持 3e-4 (Optimizer Safety for V2 Weights)
-    weight_decay = 4e-4          # 📉 Oracle: 4e-4 (Stronger regularization)
+    weight_decay = 1e-4          # 📉 Oracle: 1e-4 (Loosened for Mixup)
     epochs = 120
     
     # 训练策略
     freeze_backbone_epochs = 5
     
     # 数据增强与正则化
-    dropout = 0.3                # 🛡️ Oracle: 0.3 (Safe increment for MobileNetV3)
+    dropout = 0.2                # 🛡️ Oracle: 0.2 (Loosened Straitjacket)
     use_mixup = True             # ✅ Re-enabled: Essential for Manifold Smoothing & Generalization
     
     # ✅ [Added] Random Erasing as Compensation
-    use_random_erasing = True
+    use_random_erasing = False    # 🛡️ Disabled by User Request (Unshackled Strategy)
     re_prob = 0.2
     
     mixup_alpha = 0.5            # 🐸 Oracle: 0.5 (Stronger Mixup)
