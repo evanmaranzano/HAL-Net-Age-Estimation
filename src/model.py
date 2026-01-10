@@ -46,6 +46,35 @@ class CoordAtt(nn.Module):
         out = identity * a_h * a_w
         return out
 
+# ==========================================
+# 🧱 [Innovation] Bottleneck SPP (v2)
+# ==========================================
+class BottleneckSPP(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        # Global-Local Feature Aggregation:
+        # Multiscale receptive fields to capture both wrinkles (Local) 
+        # and facial structure (Global).
+        self.pool1 = nn.MaxPool2d(kernel_size=5, stride=1, padding=2)
+        self.pool2 = nn.MaxPool2d(kernel_size=9, stride=1, padding=4)
+        self.pool3 = nn.MaxPool2d(kernel_size=13, stride=1, padding=6)
+        
+        # Channel Expansion: in_c * 4
+        # Channel Compression: -> out_channels
+        self.project = nn.Sequential(
+            nn.Conv2d(in_channels * 4, out_channels, kernel_size=1, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.Hardswish()
+        )
+
+    def forward(self, x):
+        p1 = x
+        p2 = self.pool1(x)
+        p3 = self.pool2(x)
+        p4 = self.pool3(x)
+        out = torch.cat([p1, p2, p3, p4], dim=1)
+        return self.project(out)
+
 class LightweightAgeEstimator(nn.Module):
     def __init__(self, config):
         super(LightweightAgeEstimator, self).__init__()
@@ -186,41 +215,15 @@ class LightweightAgeEstimator(nn.Module):
         # 🌟 [Innovation] Spatial Pyramid Pooling (Low Cost, High Return)
         self.use_spp = getattr(self.config, 'use_spp', False)
         if self.use_spp:
-            print("🧱 [Model] SPP Strategy: ENABLED (1x1, 2x2, 4x4) with 128-ch bottleneck")
-            # SPP Bottleneck: 960 (Deep Feat) -> 128 
-            # Note: The input to classifier is usually 960 (before expansion to 1280 in classifier[0])
-            # Or is it 1280? 
-            # In MBV3 Large: last conv is 960. 
-            # self.last_channel = 960.
+            print("🧱 [Model] SPP Strategy: ENABLED (Bottleneck SPP v2 - Global-Local 5/9/13)")
+            self.spp_channels = 512
+            self.spp_module = BottleneckSPP(self.last_channel, self.spp_channels)
             
-            self.spp_channels = 128
-            self.spp_bottleneck = nn.Sequential(
-                nn.Conv2d(self.last_channel, self.spp_channels, 1, bias=False),
-                nn.BatchNorm2d(self.spp_channels),
-                nn.Hardswish()
-            )
-            
-            # SPP Dimensions:
-            # 1x1 = 1
-            # 2x2 = 4
-            # 4x4 = 16
-            # Total = 21 * spp_channels
-            self.spp_dim = self.spp_channels * 21 # 128 * 21 = 2688
-            
-            # Update Classifier Input Dim
-            # If SPP is on, we replace the deep branch (1280) with SPP (2688)
-            # If MSFF is also on, we add 128 (Texture) -> Total = 2688 + 128
-            
+            # Classifier Input Dim: 512 (+ 128 if MSFF)
             if self.use_multi_scale:
-                classifier_input_dim = self.spp_dim + 128
+                classifier_input_dim = self.spp_channels + 128
             else:
-                classifier_input_dim = self.spp_dim
-            
-            # Note: We need adaptive pools
-            self.spp_pool1 = nn.AdaptiveAvgPool2d(1)
-            self.spp_pool2 = nn.AdaptiveAvgPool2d(2)
-            self.spp_pool4 = nn.AdaptiveAvgPool2d(4)
-            
+                classifier_input_dim = self.spp_channels
         else:
             print("ℹ️ [Model] SPP Strategy: DISABLED (Using Global Average Pooling)")
             # classifier_input_dim remains what was set by MSFF block
@@ -300,15 +303,11 @@ class LightweightAgeEstimator(nn.Module):
         
         # --- SPP Logic ---
         if self.use_spp:
-            # 1. Bottleneck (960 -> 128)
-            x_spp = self.spp_bottleneck(x_deep) # [B, 128, 7, 7]
+            # 1. Bottleneck SPP v2
+            x_spp_out = self.spp_module(x_deep) # [B, 512, 7, 7]
             
-            # 2. Pyramid Pooling
-            p1 = self.spp_pool1(x_spp).flatten(1) # [B, 128]
-            p2 = self.spp_pool2(x_spp).flatten(1) # [B, 128*4]
-            p3 = self.spp_pool4(x_spp).flatten(1) # [B, 128*16]
-            
-            x_sem = torch.cat([p1, p2, p3], dim=1) # [B, 2688]
+            # 2. Global Average Pooling (Standard after SPP feature aggregation)
+            x_sem = torch.nn.functional.adaptive_avg_pool2d(x_spp_out, (1, 1)).flatten(1) # [B, 512]
         else:
             # Standard GAP + Project
             x_pool = self.backbone.avgpool(x_deep).flatten(1) # [B, 960]

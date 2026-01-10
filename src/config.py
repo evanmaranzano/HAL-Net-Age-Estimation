@@ -9,11 +9,11 @@ class Config:
     use_hybrid_attention = True  # HA: Coordinate Attention
     use_dldl_v2 = True           # DLDL: Adaptive Sigma + Rank Loss
     use_multi_scale = True       # MSFF: Texture-Semantics Dual-Stream
-    use_spp = True               # SPP: Spatial Pyramid Pooling
+    use_spp = True               # SPP: Bottleneck SPP v2 (Global-Local Fusion)
     
     # --- 1.1 📊 Split Protocol (New) ---
     # Options: '90-5-5' (Our Best) or '72-8-20' (Standard 80-20 implementation)
-    split_protocol = '90-5-5'
+    split_protocol = '80-10-10'
 
     # --- 1.2 🌱 Academic Seeds (with Meanings) ---
     ACADEMIC_SEEDS = {
@@ -51,7 +51,7 @@ class Config:
     sigma_min = 1.0              # 🛡️ Rescue: Sharpened back to 1.0 (Precision over Ambiguity)
     sigma_max = 3.0              # 🛡️ Rescue: Tightened upper bound
     lambda_l1 = 0.1              # 📉 Oracle: 0.1
-    lambda_rank = 1.0            # 👑 Rescue: Restored to 1.0 for stronger ordinal ranking
+    lambda_rank = 0.5            # 👑 2027b: Reduced to 0.5 to prevent Rank-L1 conflict
 
     # Mean-Variance Loss (Nuclear Weapon)
     use_mv_loss = True
@@ -64,7 +64,7 @@ class Config:
     # 训练/优化
     batch_size = 128             # 🚀 Increased for A10 (24GB VRAM) utilization
     learning_rate = 0.0003       #保持 3e-4
-    weight_decay = 4e-4          # ⚖️ Balanced: 4e-4 (Seed 2026 Value) - Prevents explosion
+    weight_decay = 1e-4          # ⚖️ 2027b: Lowered to 1e-4 to reduce over-regularization
     epochs = 120
     
     # 训练策略
@@ -72,7 +72,7 @@ class Config:
     
     # 数据增强与正则化
     # 数据增强与正则化
-    dropout = 0.25               # ⚖️ Balanced: 0.25 (Middle Ground)
+    dropout = 0.1                # ⚖️ 2027b: Lowered to 0.1 as Mixup provides sufficient regularization
     use_mixup = True             # ✅ Re-enabled: Essential for Manifold Smoothing & Generalization
     
     # ✅ [Added] Random Erasing as Compensation

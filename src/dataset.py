@@ -474,6 +474,10 @@ def get_dataloaders(config):
         target_ratios = (0.72, 0.08, 0.20)
         # Use a distinct filename to strictly avoid overwriting the main benchmark split
         split_filename = f"dataset_split_{dataset_prefix}_72_8_20.json"
+    elif split_protocol == '80-10-10':
+        print("⚖️ Using Balanced 80-10-10 Protocol (Train 80% / Val 10% / Test 10%)")
+        target_ratios = (0.80, 0.10, 0.10)
+        split_filename = f"dataset_split_{dataset_prefix}_80_10_10.json"
     else:
         # Default 90-5-5
         if split_protocol != '90-5-5':

@@ -237,19 +237,31 @@ def train(args):
 
         # 🌟 [Online Hard Distillation] Disable Regularization at later stages
         if epoch >= 105:
-            if cfg.use_mixup:
-                print(f"🔥 [Epoch {epoch+1}] Hard Distillation Mode: Disabling Mixup!")
+            # We use a 'Re-Loader' strategy to ensure worker processes (persistent_workers=True)
+            # strictly receive the updated config and clean transforms on Windows.
+            if epoch == 105:
+                print(f"🔥 [Epoch {epoch+1}] Hard Distillation Mode: Rebuilding DataLoader to flush persistent workers...")
                 cfg.use_mixup = False
+                cfg.use_sigma_jitter = False
                 
-            # Disable Random Erasing dynamically by modifying the transform instance in place
-            if hasattr(train_loader.dataset, 'transform') and hasattr(train_loader.dataset.transform, 'transforms'):
-                for t in train_loader.dataset.transform.transforms:
-                    if 'SafeRandomErasing' in str(type(t)) and t.p > 0:
-                        print(f"🔥 [Epoch {epoch+1}] Hard Distillation Mode: Disabling Random Erasing!")
-                        t.p = 0.0
-
+                # Update Dataset in-place
+                train_loader.dataset.augment_label = False
+                # Switch to pure validation transform (Clean images)
+                train_loader.dataset.transform = val_loader.dataset.transform
+                
+                # Re-instantiate DataLoader
+                train_loader = DataLoader(
+                    train_loader.dataset, 
+                    batch_size=cfg.batch_size, 
+                    shuffle=True, 
+                    num_workers=cfg.num_workers, 
+                    pin_memory=True, 
+                    collate_fn=train_loader.collate_fn, 
+                    persistent_workers=True
+                )
+            
             if cfg.use_sigma_jitter:
-                print(f"🔥 [Epoch {epoch+1}] Hard Distillation Mode: Disabling Sigma Jitter!")
+                # Fallback for dynamic safety
                 cfg.use_sigma_jitter = False
 
         # --- 1. 训练 ---
