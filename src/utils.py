@@ -395,7 +395,10 @@ class MeanVarianceLoss(nn.Module):
         # Var = E[(x - mean)^2] = sum( P_i * (i - mean)^2 )
         # broadcasting: [1, 81] - [BS, 1] = [BS, 81]
         variance = torch.sum(probs * (self.age_centers[None, :] - mean_tensor[:, None]) ** 2, dim=1)
-        l_var = torch.mean(variance)
+        
+        # 归一化: Divide by (range)^2 to keep loss scale invariant
+        normalization = (self.end_age - self.start_age) ** 2
+        l_var = torch.mean(variance) / normalization
         
         # 总损失
         return l_mean + self.lambda_var * l_var

@@ -121,9 +121,26 @@ def train(args):
     # 4. 损失函数 (Combined)
     criterion = CombinedLoss(cfg, weights=class_weights).to(cfg.device)
     
-    # 5. 优化器
+    # 5. 优化器 (Layer-wise Learning Rate)
+    # 2027 Strategy: Backbone gets smaller LR (1e-5 range), Head gets normal LR (3e-4)
+    backbone_params = []
+    head_params = []
+    
+    # Iterate main model parameters
+    # Note: 'model' is the LightweightAgeEstimator. 
+    # model.backbone is the mobilenet.
+    
+    for name, param in model.named_parameters():
+        if "backbone" in name:
+            backbone_params.append(param)
+        else:
+            head_params.append(param)
+
     optimizer = optim.AdamW(
-        model.parameters(), 
+        [
+            {'params': backbone_params, 'lr': cfg.learning_rate * 0.1}, # Backbone: 3e-5
+            {'params': head_params, 'lr': cfg.learning_rate}            # Head/Fusion: 3e-4
+        ], 
         lr=cfg.learning_rate, 
         weight_decay=cfg.weight_decay 
     )
@@ -187,25 +204,20 @@ def train(args):
         if start_epoch < freeze_epochs:
             print(f"❄️  Freeze Strategy Enabled: Backbone will be frozen for first {freeze_epochs} epochs.")
             # Freeze all
-            for name, param in model.named_parameters():
+            # 1. Freeze Backbone only (Keep Head/Adapters trainable)
+            for param in model.backbone.parameters():
                 param.requires_grad = False
-                
-            # Unfreeze classifier
-            for param in model.backbone.classifier.parameters():
-                param.requires_grad = True
-                
-            # Unfreeze CoordAtt layers (identified by class name or parameter name)
-            # Our CoordAtt modules are inside backbone.features...
-            # We can check specific naming or type.
-            # Since we modified model.py to inject CoordAtt (class names 'CoordAtt'), we can check modules.
+
+            # 2. Unfreeze CoordAtt modules inside backbone
             count_unfrozen = 0
-            for name, module in model.named_modules():
+            for name, module in model.backbone.named_modules():
                 if "CoordAtt" in str(type(module)):
                     for param in module.parameters():
                         param.requires_grad = True
                         count_unfrozen += 1
             
-            print(f"    -> Unfrozen Wrapper: Classifier + {count_unfrozen} CoordAtt modules enabled.")
+            print(f"    -> Backbone Frozen. {count_unfrozen} CoordAtt modules inside backbone Unfrozen.")
+            print(f"    -> Head, SPP, and Fusion layers remain trainable.")
         else:
             print(f"❄️  Freeze Strategy Skipped: Resume Epoch {start_epoch+1} >= Freeze Limit {freeze_epochs}. Backbone remains unfrozen.")
 
@@ -235,6 +247,10 @@ def train(args):
                     if 'SafeRandomErasing' in str(type(t)) and t.p > 0:
                         print(f"🔥 [Epoch {epoch+1}] Hard Distillation Mode: Disabling Random Erasing!")
                         t.p = 0.0
+
+            if cfg.use_sigma_jitter:
+                print(f"🔥 [Epoch {epoch+1}] Hard Distillation Mode: Disabling Sigma Jitter!")
+                cfg.use_sigma_jitter = False
 
         # --- 1. 训练 ---
         model.train()

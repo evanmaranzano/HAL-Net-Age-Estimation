@@ -22,7 +22,7 @@ class Config:
         2026: "Current Year (Modernity Check)",
         1337: "Leet (Elite)",
         1106: "Special Dedication <3 (Randomly Sampled w.r.t our hearts)",
-        2027: "The Unshackled Run (Oracle Optimized)"
+        2027: "The Robustness Overhaul (Correction of 2026's Hubris)"
     }
 
     # --- 2. 🚀 动态项目命名逻辑 (Robust & Dynamic) ---
@@ -48,11 +48,11 @@ class Config:
     
     # DLDL-v2 动态微调参数
     use_adaptive_sigma = True
-    sigma_min = 1.0              # 🛡️ Oracle: Reduced to 1.0 (Sharpened)
-    sigma_max = 3.0              # 🛡️ Oracle: Reduced to 3.0 (Less tolerance)
-    lambda_l1 = 0.1              # 📉 Oracle: 0.1 (But effectively ~0 due to LDS scaling)
-    lambda_rank = 0.5            # 👑 Adjusted: Lowered to 0.5 to give MV loss room
-    
+    sigma_min = 1.0              # 🛡️ Rescue: Sharpened back to 1.0 (Precision over Ambiguity)
+    sigma_max = 3.0              # 🛡️ Rescue: Tightened upper bound
+    lambda_l1 = 0.1              # 📉 Oracle: 0.1
+    lambda_rank = 1.0            # 👑 Rescue: Restored to 1.0 for stronger ordinal ranking
+
     # Mean-Variance Loss (Nuclear Weapon)
     use_mv_loss = True
     lambda_mv = 0.1
@@ -62,21 +62,22 @@ class Config:
     sigma_jitter = 0.2
     
     # 训练/优化
-    batch_size = 128             # 🚀 Increased for A10 (24GB VRAM) utilization (AMP Enabled)
-    learning_rate = 0.0003       #保持 3e-4 (Optimizer Safety for V2 Weights)
-    weight_decay = 1e-4          # 📉 Oracle: 1e-4 (Loosened for Mixup)
+    batch_size = 128             # 🚀 Increased for A10 (24GB VRAM) utilization
+    learning_rate = 0.0003       #保持 3e-4
+    weight_decay = 4e-4          # ⚖️ Balanced: 4e-4 (Seed 2026 Value) - Prevents explosion
     epochs = 120
     
     # 训练策略
-    freeze_backbone_epochs = 5
+    freeze_backbone_epochs = 10  # Keep 10 for safety
     
     # 数据增强与正则化
-    dropout = 0.2                # 🛡️ Oracle: 0.2 (Loosened Straitjacket)
+    # 数据增强与正则化
+    dropout = 0.25               # ⚖️ Balanced: 0.25 (Middle Ground)
     use_mixup = True             # ✅ Re-enabled: Essential for Manifold Smoothing & Generalization
     
     # ✅ [Added] Random Erasing as Compensation
-    use_random_erasing = False    # 🛡️ Disabled by User Request (Unshackled Strategy)
-    re_prob = 0.2
+    use_random_erasing = True    # 🛡️ Balanced: Enabled (Light regularization)
+    re_prob = 0.1                # 🛡️ Balanced: 0.1 (Conservative but robust)
     
     mixup_alpha = 0.5            # 🐸 Oracle: 0.5 (Stronger Mixup)
     mixup_prob = 0.5
@@ -104,7 +105,7 @@ class Config:
     # 图片参数
     img_size = 224
     num_workers = 4              # 🏎️ Optimized for CPU usage (avoid 100% load)
-    early_stopping_patience = 999
+    early_stopping_patience = 999 # 🛡️ 2027 Strategy: "Trust the Process". Let Cosine Annealing finish its full cycle.
 
     def __init__(self):
         pass # Attributes are class-level or properties
