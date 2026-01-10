@@ -618,8 +618,13 @@ if __name__ == "__main__":
         elif choice == '4':
             print("\n🔧 Custom Configuration Mode:")
             s = input("   - Seed [42]: ").strip() or '42'
-            sp_choice = input("   - Split (1: 90-5-5, 2: 72-8-20) [1]: ").strip()
-            split = '72-8-20' if sp_choice == '2' else '90-5-5'
+            sp_choice = input("   - Split (1: 90-5-5, 2: 72-8-20, 3: 80-10-10) [3]: ").strip()
+            if sp_choice == '1':
+                split = '90-5-5'
+            elif sp_choice == '2':
+                split = '72-8-20'
+            else:
+                split = '80-10-10'  # Default to Robust 80-10-10
             ep = input("   - Epochs [Default]: ").strip()
             fz = input("   - Freeze Epochs [Default]: ").strip()
             
