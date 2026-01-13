@@ -48,7 +48,7 @@ class Config:
     
     # DLDL-v2 动态微调参数
     use_adaptive_sigma = True
-    sigma_min = 1.0              # 🛡️ Rescue: Sharpened back to 1.0 (Precision over Ambiguity)
+    sigma_min = 1.0              # 🛡️ Rescue: Sharpened back to 1.0 (Precision)
     sigma_max = 3.0              # 🛡️ Rescue: Tightened upper bound
     lambda_l1 = 0.1              # 📉 Oracle: 0.1
     lambda_rank = 0.5            # 👑 2027b: Reduced to 0.5 to prevent Rank-L1 conflict
@@ -64,7 +64,7 @@ class Config:
     # 训练/优化
     batch_size = 128             # 🚀 Increased for A10 (24GB VRAM) utilization
     learning_rate = 0.0003       #保持 3e-4
-    weight_decay = 1e-4          # ⚖️ 2027b: Lowered to 1e-4 to reduce over-regularization
+    weight_decay = 4e-4          # ⚖️ 2027c: Increased to 4e-4 (Standard AdamW)
     epochs = 120
     
     # 训练策略
@@ -72,14 +72,14 @@ class Config:
     
     # 数据增强与正则化
     # 数据增强与正则化
-    dropout = 0.1                # ⚖️ 2027b: Lowered to 0.1 as Mixup provides sufficient regularization
+    dropout = 0.35               # ⚖️ 2027d: Adjusted to 0.35 (Rescue 1106: Stronger Regularization)
     use_mixup = True             # ✅ Re-enabled: Essential for Manifold Smoothing & Generalization
     
     # ✅ [Added] Random Erasing as Compensation
     use_random_erasing = True    # 🛡️ Balanced: Enabled (Light regularization)
     re_prob = 0.1                # 🛡️ Balanced: 0.1 (Conservative but robust)
     
-    mixup_alpha = 0.5            # 🐸 Oracle: 0.5 (Stronger Mixup)
+    mixup_alpha = 0.5            # 🐸 Oracle: 0.5 (Standard Mixup)
     mixup_prob = 0.5
     
     use_ema = True

@@ -9,9 +9,9 @@ from torchvision import transforms
 import time
 import pandas as pd
 from collections import deque
-from PyQt5.QtMultimedia import QCameraInfo
-from PyQt5.QtWidgets import QApplication
-import sys
+
+import glob
+import os
 
 # Import local modules
 from model import LightweightAgeEstimator
@@ -96,32 +96,14 @@ st.markdown("""
 # ================= Helper Functions =================
 def get_available_cameras():
     """
-    Detects available cameras using PyQt5 and returns a mapped dictionary.
-    Returns: dict { 'Camera Name': index, ... }
+    Returns a static list of camera indices to avoid slow probing.
+    Probing triggers heavy driver initialization (e.g. NVIDIA Broadcast) which causes lag and log spam.
     """
-    camera_map = {}
-    try:
-        # PyQt5 requires a QApplication instance for some features, 
-        # though QCameraInfo might work without it. To be safe:
-        if not QApplication.instance():
-            app = QApplication(sys.argv)
-        
-        cameras = QCameraInfo.availableCameras()
-        for i, camera in enumerate(cameras):
-            # QCameraInfo.description() gives a human-readable name
-            # mapping to index i is a heuristics (usually matches cv2 indices)
-            # A better way for cv2 is tricky (cv2 doesn't name them), 
-            # so we assume OS enumeration order is consistent.
-            name = f"{camera.description()} (Index {i})"
-            camera_map[name] = i
-    except Exception as e:
-        print(f"Error detecting cameras: {e}")
-    
-    # Fallback if no cameras detected or error
-    if not camera_map:
-        for i in range(3):
-            camera_map[f"Camera {i}"] = i
-            
+    # Simply return 0 and 1 as options. 99% of users use index 0.
+    camera_map = {
+        "Default Camera (0)": 0,
+        "Secondary Camera (1)": 1
+    }
     return camera_map
 
 # ================= Helper Functions =================
@@ -201,7 +183,7 @@ def draw_distribution_chart(prob_dist, width=400, height=200, peak_age=None, exp
     return canvas
 
 @st.cache_resource
-def load_model():
+def load_model(model_path=None):
     """Loads and caches the model to avoid reloading."""
     cfg = Config()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -209,14 +191,32 @@ def load_model():
     # Updated instantiation to match src/model.py
     model = LightweightAgeEstimator(cfg).to(device)
     try:
-        # Try dynamic name with Seed 42 first
-        model_path = os.path.join(ROOT_DIR, f"best_model_{cfg.project_name}_seed42.pth")
-        if not os.path.exists(model_path):
-             # Try dynamic name without seed
-            model_path = os.path.join(ROOT_DIR, f"best_model_{cfg.project_name}.pth")
-        if not os.path.exists(model_path):
-            # Fallback to generic name
-            model_path = os.path.join(ROOT_DIR, "best_model.pth")
+        if model_path is None:
+            # 1. Try Specific Seed 42 first (Academic Baseline)
+            path_candidate = os.path.join(ROOT_DIR, f"best_model_{cfg.project_name}_seed42.pth")
+            if os.path.exists(path_candidate):
+                model_path = path_candidate
+            
+            # 2. Try Generic Project Name
+            if not model_path:
+                path_candidate = os.path.join(ROOT_DIR, f"best_model_{cfg.project_name}.pth")
+                if os.path.exists(path_candidate):
+                    model_path = path_candidate
+
+            # 3. Intelligent Scan: Find ANY best_model_*.pth
+            if not model_path:
+                import glob
+                # Look for files starting with best_model_ and ending with .pth
+                candidates = glob.glob(os.path.join(ROOT_DIR, "best_model_*.pth"))
+                if candidates:
+                    candidates.sort(key=os.path.getmtime, reverse=True)
+                    model_path = candidates[0]
+                    print(f"DEBUG: Auto-discovered model: {os.path.basename(model_path)}")
+            
+            # 4. Fallback
+            if not model_path:
+                model_path = os.path.join(ROOT_DIR, "best_model.pth")
+
             
         print(f"⏳ Loading model from: {model_path}")
         checkpoint = torch.load(model_path, map_location=device)
@@ -312,8 +312,23 @@ def main():
     st.title("🧬 AgeEstimator Pro")
     st.markdown("### Next-Gen Biological Age Assessment System")
 
+    # Sidebar: Model Selection
+    st.sidebar.markdown("## 🧠 Model Selection")
+    
+    # Scan for .pth files
+    model_files = glob.glob(os.path.join(ROOT_DIR, "*.pth"))
+    model_files = [os.path.basename(f) for f in model_files if "checkpoint" not in f] # Filter out checkpoints if needed
+    model_files.sort()
+    
+    if not model_files:
+        st.error("No model files found in root directory!")
+        st.stop()
+        
+    selected_model = st.sidebar.selectbox("Choose Model", model_files, index=0 if len(model_files) > 0 else 0)
+    selected_model_path = os.path.join(ROOT_DIR, selected_model)
+
     # Load Model
-    model, dldl_tools, transform, face_detection, device = load_model()
+    model, dldl_tools, transform, face_detection, device = load_model(selected_model_path)
     cfg = Config()
 
     if model is None:
@@ -424,7 +439,9 @@ def main():
         place_stats = st.empty()
         
         if run_video:
-            cap = cv2.VideoCapture(c_idx)
+            # Force DirectShow for Windows to ensure instant startup
+            cap = cv2.VideoCapture(c_idx, cv2.CAP_DSHOW)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1) # Reduce latency
             
             if not cap.isOpened():
                 st.error(f"Cannot open camera {c_idx}")

@@ -288,25 +288,47 @@ class WorkerThread(QThread):
             print("DEBUG: Instantiating LightweightAgeEstimator...", flush=True)
             self.model = LightweightAgeEstimator(self.cfg).to(self.device)
             
+            # Auto-discovery Logic
+            model_path = None
+            
             # 1. Try Specific Seed 42 first (Academic Baseline)
-            model_name = f"best_model_{self.cfg.project_name}_seed42.pth"
-            model_path = os.path.join(ROOT_DIR, model_name)
+            path_candidate = os.path.join(ROOT_DIR, f"best_model_{self.cfg.project_name}_seed42.pth")
+            if os.path.exists(path_candidate):
+                model_path = path_candidate
             
-            if not os.path.exists(model_path):
-                # 2. Try Generic Project Name
-                model_name = f"best_model_{self.cfg.project_name}.pth"
-                model_path = os.path.join(ROOT_DIR, model_name)
+            # 2. Try Generic Project Name
+            if not model_path:
+                path_candidate = os.path.join(ROOT_DIR, f"best_model_{self.cfg.project_name}.pth")
+                if os.path.exists(path_candidate):
+                    model_path = path_candidate
+
+            # 3. Intelligent Scan: Find ANY best_model_*.pth
+            if not model_path:
+                import glob
+                # Look for files starting with best_model_ and ending with .pth
+                candidates = glob.glob(os.path.join(ROOT_DIR, "best_model_*.pth"))
+                # Filter out ones that might be something else? No, any best_model is likely good.
+                # Sort by modification time (newest first)
+                if candidates:
+                    candidates.sort(key=os.path.getmtime, reverse=True)
+                    model_path = candidates[0]
+                    print(f"DEBUG: Auto-discovered model: {os.path.basename(model_path)}")
             
-            if not os.path.exists(model_path):
-                 # 3. Fallback
+            # 4. Fallback
+            if not model_path:
                 model_path = "best_model.pth"
 
             print(f"⏳ Loading model from: {model_path}", flush=True)
-            checkpoint = torch.load(model_path, map_location=self.device)
-            state_dict = checkpoint['model_state_dict'] if 'model_state_dict' in checkpoint else checkpoint
-            self.model.load_state_dict(state_dict)
-            self.model.eval()
-            print("DEBUG: Model loaded successfully", flush=True)
+            if os.path.exists(model_path):
+                checkpoint = torch.load(model_path, map_location=self.device)
+                state_dict = checkpoint['model_state_dict'] if 'model_state_dict' in checkpoint else checkpoint
+                self.model.load_state_dict(state_dict)
+                self.model.eval()
+                print("DEBUG: Model loaded successfully", flush=True)
+            else:
+                print(f"⚠️ Model file not found: {model_path}. Please use 'Load Model' button.", flush=True)
+                # Ensure model exists but is not loaded with weights (random init) or just don't run inference?
+                # We'll just let it be random init but warn user
         except Exception as e:
             print(f"❌ Model Initialization/Load failed: {e}", flush=True)
             traceback.print_exc()
@@ -314,10 +336,8 @@ class WorkerThread(QThread):
             # Continuing might crash later. But let's let it run to see error.
             if not hasattr(self, 'model'):
                  print("CRITICAL: Model object was not created. Creating dummy...", flush=True)
-                 # Create a dummy model or exit? Exit is better.
-                 # But we possess no exit capability here easily without killing app.
-                 # Let's try to pass and see if user sees the error.
             pass
+    
 
         print("DEBUG: Initializing DLDLProcessor...", flush=True)
         self.dldl_tools = DLDLProcessor(self.cfg)
@@ -350,9 +370,13 @@ class WorkerThread(QThread):
                     self._run_flag = False
                 cap = None
             else:
-                cap = cv2.VideoCapture(self.source_path)
                 if self.mode == 'camera':
+                    # Force DirectShow for Windows to avoid NVIDIA driver hang/lag
                     cap = cv2.VideoCapture(self.source_path, cv2.CAP_DSHOW)
+                    # Optimize caching for low latency
+                    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                else: 
+                    cap = cv2.VideoCapture(self.source_path)
                 
                 if not cap.isOpened():
                     print("❌ 错误：无法打开摄像头")
@@ -499,6 +523,21 @@ class WorkerThread(QThread):
     def set_calibration_offset(self, val):
         self.calibration_offset = val
 
+    def load_new_model(self, model_path):
+        print(f"🔄 Loading new model from: {model_path}", flush=True)
+        try:
+            # Re-instantiate to be safe or just load weights? 
+            # Ideally just load weights if arch is same. Assuming same arch for now.
+            checkpoint = torch.load(model_path, map_location=self.device)
+            state_dict = checkpoint['model_state_dict'] if 'model_state_dict' in checkpoint else checkpoint
+            self.model.load_state_dict(state_dict)
+            self.model.eval()
+            print("✅ New model loaded successfully", flush=True)
+            return True, "Success"
+        except Exception as e:
+            print(f"❌ Failed to load model: {e}", flush=True)
+            return False, str(e)
+
 # ================= 主界面 =================
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -541,12 +580,17 @@ class MainWindow(QMainWindow):
         self.btn_file = QPushButton("📂 打开本地文件")
         self.btn_file.clicked.connect(self.open_file)
         
+        self.btn_load_model = QPushButton("🧩 加载模型")
+        self.btn_load_model.clicked.connect(self.load_model_action)
+        self.btn_load_model.setStyleSheet("background-color: rgba(60, 60, 60, 220); border: 1px solid #555;")
+        
         self.btn_stop = QPushButton("🛑 停止检测")
         self.btn_stop.setObjectName("btn_stop")
         self.btn_stop.clicked.connect(self.stop_thread_action)
         self.btn_stop.setEnabled(False)
         btn_layout.addWidget(self.btn_camera)
         btn_layout.addWidget(self.btn_file)
+        btn_layout.addWidget(self.btn_load_model)
         btn_layout.addWidget(self.btn_stop)
         video_layout.addLayout(btn_layout)
         video_group.setLayout(video_layout)
@@ -678,6 +722,20 @@ class MainWindow(QMainWindow):
         self.btn_stop.setEnabled(True)
         self.thread.set_source('camera', 0)
         self.thread.start()
+
+    def load_model_action(self):
+        if self.thread.isRunning():
+            self.status_bar.showMessage("⚠️ Please stop detection first!", 3000)
+            return
+            
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Model File", ".", "PyTorch Model (*.pth)")
+        if file_path:
+            self.status_bar.showMessage(f"Loading model: {os.path.basename(file_path)}...")
+            success, msg = self.thread.load_new_model(file_path)
+            if success:
+                self.status_bar.showMessage(f"✅ Model Loaded: {os.path.basename(file_path)}")
+            else:
+                self.status_bar.showMessage(f"❌ Load Failed: {msg}")
 
     def open_file(self):
         if self.thread.isRunning(): return

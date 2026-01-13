@@ -9,7 +9,7 @@ from model import LightweightAgeEstimator
 from dataset import get_dataloaders
 from utils import DLDLProcessor
 
-def validate(model, loader, device, dldl_tools):
+def validate(model, loader, device, dldl_tools, cfg):
     model.eval()
     mae_sum = 0.0
     count = 0
@@ -111,8 +111,8 @@ def main(seed):
     mae_a_test = 999.0
     if soup_a_state:
         model.load_state_dict(soup_a_state)
-        mae_a_val = validate(model, val_loader, device, dldl_tools)
-        mae_a_test = validate(model, test_loader, device, dldl_tools)
+        mae_a_val = validate(model, val_loader, device, dldl_tools, cfg)
+        mae_a_test = validate(model, test_loader, device, dldl_tools, cfg)
         print(f"✅ Soup A -> Val: {mae_a_val:.4f} | Test: {mae_a_test:.4f}")
 
     # 4. Strategy B: Soup + Best (Epochs + Best)
@@ -124,8 +124,8 @@ def main(seed):
     mae_b_test = 999.0
     if soup_b_state:
         model.load_state_dict(soup_b_state)
-        mae_b_val = validate(model, val_loader, device, dldl_tools)
-        mae_b_test = validate(model, test_loader, device, dldl_tools)
+        mae_b_val = validate(model, val_loader, device, dldl_tools, cfg)
+        mae_b_test = validate(model, test_loader, device, dldl_tools, cfg)
         print(f"✅ Soup B -> Val: {mae_b_val:.4f} | Test: {mae_b_test:.4f}")
         
     # 5. Baseline: Best Model Only
@@ -134,8 +134,8 @@ def main(seed):
     mae_best_test = 999.0
     if os.path.exists(best_model_path):
         model.load_state_dict(torch.load(best_model_path, map_location=device))
-        mae_best_val = validate(model, val_loader, device, dldl_tools)
-        mae_best_test = validate(model, test_loader, device, dldl_tools)
+        mae_best_val = validate(model, val_loader, device, dldl_tools, cfg)
+        mae_best_test = validate(model, test_loader, device, dldl_tools, cfg)
         print(f"✅ Best Model -> Val: {mae_best_val:.4f} | Test: {mae_best_test:.4f}")
     else:
         print(f"❌ Best Model not found at: {best_model_path}")

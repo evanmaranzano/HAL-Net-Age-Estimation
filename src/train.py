@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.utils.data import DataLoader
 from config import Config, ROOT_DIR
 from dataset import get_dataloaders
 from model import LightweightAgeEstimator
@@ -138,7 +139,7 @@ def train(args):
 
     optimizer = optim.AdamW(
         [
-            {'params': backbone_params, 'lr': cfg.learning_rate * 0.1}, # Backbone: 3e-5
+            {'params': backbone_params, 'lr': cfg.learning_rate},       # Backbone: 3e-4 (Full Sprint)
             {'params': head_params, 'lr': cfg.learning_rate}            # Head/Fusion: 3e-4
         ], 
         lr=cfg.learning_rate, 
