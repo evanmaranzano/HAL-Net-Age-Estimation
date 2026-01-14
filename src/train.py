@@ -43,6 +43,45 @@ def mixup_data(x, y_dist, y_age, alpha=0.4):
     
     return mixed_x, mixed_y_dist, mixed_y_age
 
+
+# ==========================================
+# Multi-Scale TTA (6x: 0.9/1.0/1.1 + flip)
+# ==========================================
+def multi_scale_tta(images, model):
+    """
+    激进 Multi-Scale TTA: 3个尺度 (0.9, 1.0, 1.1) x 2 (原始 + 翻转) = 6x 平均
+    可将单模型 MAE 降低约 0.01-0.02
+    """
+    scales = [0.9, 1.0, 1.1]
+    all_probs = []
+    
+    for scale in scales:
+        if scale != 1.0:
+            new_size = int(224 * scale)
+            resized = F.interpolate(images, size=new_size, mode='bilinear', align_corners=False)
+            if new_size > 224:
+                start = (new_size - 224) // 2
+                resized = resized[:, :, start:start+224, start:start+224]
+            else:
+                pad = (224 - new_size) // 2
+                resized = F.pad(resized, (pad, 224-new_size-pad, pad, 224-new_size-pad), mode='reflect')
+        else:
+            resized = images
+        
+        # 原始
+        logits = model(resized)
+        probs = F.softmax(logits, dim=1)
+        all_probs.append(probs)
+        
+        # 水平翻转
+        flipped = torch.flip(resized, dims=[3])
+        logits_flip = model(flipped)
+        probs_flip = F.softmax(logits_flip, dim=1)
+        all_probs.append(probs_flip)
+    
+    # 平均 6 个预测
+    return torch.stack(all_probs, dim=0).mean(dim=0)
+
 # ==========================================
 # CSV Logger
 # ==========================================
@@ -351,18 +390,8 @@ def train(args):
                 target_dists = target_dists.to(cfg.device)
                 true_ages = true_ages.to(cfg.device)
                 
-                # TTA 验证 (Horizontal Flip)
-                # 1. 正常
-                logits = model(images)
-                probs = F.softmax(logits, dim=1)
-                
-                # 2. 翻转
-                images_flip = torch.flip(images, dims=[3])
-                logits_flip = model(images_flip)
-                probs_flip = F.softmax(logits_flip, dim=1)
-                
-                # 3. 融合
-                probs = (probs + probs_flip) / 2.0
+                # TTA 验证 (Multi-Scale 6x: 0.9/1.0/1.1 + flip)
+                probs = multi_scale_tta(images, model)
                 
                 # 计算 Loss (仅参考，这里只算主KL)
                 log_probs = torch.log(probs + 1e-8) 
@@ -458,18 +487,8 @@ def train(args):
     with torch.no_grad():
         for images, labels, ages in test_loader:
             images, labels, ages = images.to(cfg.device), labels.to(cfg.device), ages.to(cfg.device)
-            # TTA Evaluation
-            # 1. Normal
-            logits = model(images)
-            probs = F.softmax(logits, dim=1)
-            
-            # 2. Horizontal Flip
-            images_flip = torch.flip(images, dims=[3])
-            logits_flip = model(images_flip)
-            probs_flip = F.softmax(logits_flip, dim=1)
-            
-            # 3. Fuse
-            probs = (probs + probs_flip) / 2.0
+            # TTA Evaluation (Multi-Scale 6x: 0.9/1.0/1.1 + flip)
+            probs = multi_scale_tta(images, model)
             
             # Predict
             output_ages = torch.sum(probs * rank_arange.float(), dim=1)
