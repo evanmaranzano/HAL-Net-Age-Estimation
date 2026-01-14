@@ -168,14 +168,13 @@ python -m streamlit run src/web_demo.py
     | **42** | **3.06** | ✅ 已验证 | 标准学术基准 |
     | **1337** | **3.07** | ✅ 已验证 | "Elite Seed" (稳健性检查) |
     | **3407** | **3.07** | ✅ 已验证 | "The Golden Seed" (arXiv:2109.08203) |
-    | **2026** | **3.12** | ✅ 已验证 | "Current Year" (现代性检查) |
 3.  **复现脚本**:
     ```bash
     # 运行学术基准 (交互式 / 批处理)
     python src/train.py
 
     # 直接运行特定种子
-    python src/train.py --seed 2026
+    python src/train.py --seed 1337
     ```
 
 ---
