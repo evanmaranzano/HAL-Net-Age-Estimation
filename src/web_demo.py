@@ -239,6 +239,42 @@ def load_model(model_path=None):
     
     return model, dldl_tools, transform, face_detection, device
 
+# ================= Multi-Scale TTA (6x) =================
+def multi_scale_tta(images, model):
+    """
+    激进 Multi-Scale TTA: 3个尺度 (0.9, 1.0, 1.1) x 2 (原始 + 翻转) = 6x 平均
+    用于 Demo 提升预测精度
+    """
+    scales = [0.9, 1.0, 1.1]
+    all_probs = []
+    
+    for scale in scales:
+        if scale != 1.0:
+            new_size = int(224 * scale)
+            resized = F.interpolate(images, size=new_size, mode='bilinear', align_corners=False)
+            if new_size > 224:
+                start = (new_size - 224) // 2
+                resized = resized[:, :, start:start+224, start:start+224]
+            else:
+                pad = (224 - new_size) // 2
+                resized = F.pad(resized, (pad, 224-new_size-pad, pad, 224-new_size-pad), mode='reflect')
+        else:
+            resized = images
+        
+        # 原始
+        logits = model(resized)
+        probs = F.softmax(logits, dim=1)
+        all_probs.append(probs)
+        
+        # 水平翻转
+        flipped = torch.flip(resized, dims=[3])
+        logits_flip = model(flipped)
+        probs_flip = F.softmax(logits_flip, dim=1)
+        all_probs.append(probs_flip)
+    
+    # 平均 6 个预测
+    return torch.stack(all_probs, dim=0).mean(dim=0)
+
 # ================= Inference Logic =================
 def process_single_image(image_np, model, dldl_tools, transform, face_detection, device, cfg, params):
     h, w, c = image_np.shape
@@ -272,14 +308,8 @@ def process_single_image(image_np, model, dldl_tools, transform, face_detection,
                 input_tensor = transform(pil_img).unsqueeze(0).to(device)
                 
                 with torch.no_grad():
-                    # TTA
-                    logits = model(input_tensor)
-                    probs = F.softmax(logits, dim=1)
-                    
-                    logits_flip = model(torch.flip(input_tensor, dims=[3]))
-                    probs_flip = F.softmax(logits_flip, dim=1)
-                    
-                    probs = (probs + probs_flip) / 2.0
+                    # Multi-Scale TTA (6x: 0.9/1.0/1.1 + flip)
+                    probs = multi_scale_tta(input_tensor, model)
                     
                     # Age Calculation
                     raw_mean = dldl_tools.expectation_regression(probs).item()

@@ -51,7 +51,7 @@ class Config:
     sigma_min = 1.0              # 🛡️ Rescue: Sharpened back to 1.0 (Precision)
     sigma_max = 3.0              # 🛡️ Rescue: Tightened upper bound
     lambda_l1 = 0.1              # 📉 Oracle: 0.1
-    lambda_rank = 0.3            # 👑 2027b: Reduced to 0.5 to prevent Rank-L1 conflict
+    lambda_rank = 0.5            # 👑 Standard: 0.5 for Ranking Loss weight
 
     # Mean-Variance Loss (Nuclear Weapon)
     use_mv_loss = True
