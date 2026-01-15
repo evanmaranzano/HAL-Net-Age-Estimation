@@ -12,7 +12,7 @@ class Config:
     use_spp = True               # SPP: Bottleneck SPP v2 (Global-Local Fusion)
     
     # --- 1.1 📊 Split Protocol (New) ---
-    # Options: '90-5-5' (Our Best) or '72-8-20' (Standard 80-20 implementation)
+    # Options: '80-10-10' (Our Best), '90-5-5' (Legacy), or '72-8-20' (Standard 80-20 implementation)
     split_protocol = '80-10-10'
 
     # --- 1.2 🌱 Academic Seeds (with Meanings) ---
