@@ -32,7 +32,10 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
-# Documentation artifacts (optional)
+# Documentation artifacts & Personal files
 technical_report.html
-审批表加任务书加开题报告.docx
-3222707108曾皓钰.docx
+*.docx
+
+# Personal identification (student ID, names, etc.)
+*曾皓钰*
+*3222707108*
