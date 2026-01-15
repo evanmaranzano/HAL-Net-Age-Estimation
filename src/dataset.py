@@ -24,10 +24,10 @@ def my_collate_fn(batch):
 # ==========================================
 # 0. Stratified Split Strategy (The "Platinum" Choice)
 # ==========================================
-def get_stratified_split(dataset, all_ages, split_ratios=(0.90, 0.05, 0.05), save_path=None):
+def get_stratified_split(dataset, all_ages, split_ratios=(0.80, 0.10, 0.10), save_path=None):
     """
     Perform Stratified Sampling based on age labels.
-    Ensures 90/5/5 split holds true for *every single age class*.
+    Ensures 80/10/10 split holds true for *every single age class*.
     """
     if save_path is None:
         save_path = os.path.join(ROOT_DIR, "dataset_split_stratified.json")        
@@ -53,7 +53,7 @@ def get_stratified_split(dataset, all_ages, split_ratios=(0.90, 0.05, 0.05), sav
         except Exception as e:
             print(f"⚠️ Load failed ({e}), regenerating...")
 
-    print("⚖️ Performing Stratified Sampling (90/5/5 per age)...")
+    print("⚖️ Performing Stratified Sampling (80/10/10 per age)...")
     
     # Group indices by age
     indices_by_age = defaultdict(list)
@@ -467,7 +467,7 @@ def get_dataloaders(config):
             dataset_prefix = "AAF"
             
     # Determine Ratios based on Protocol
-    split_protocol = getattr(config, 'split_protocol', '90-5-5')
+    split_protocol = getattr(config, 'split_protocol', '80-10-10')
     
     if split_protocol == '72-8-20':
         print("⚠️ Using Standard 80-20 Protocol (Train 72% / Val 8% / Test 20%)")
@@ -478,11 +478,16 @@ def get_dataloaders(config):
         print("⚖️ Using Balanced 80-10-10 Protocol (Train 80% / Val 10% / Test 10%)")
         target_ratios = (0.80, 0.10, 0.10)
         split_filename = f"dataset_split_{dataset_prefix}_80_10_10.json"
-    else:
-        # Default 90-5-5
-        if split_protocol != '90-5-5':
-            print(f"⚠️ Unknown protocol '{split_protocol}', falling back to 90-5-5")
+    elif split_protocol == '90-5-5':
+        print("📜 Using Legacy 90-5-5 Protocol (Train 90% / Val 5% / Test 5%)")
         target_ratios = (0.90, 0.05, 0.05)
+        split_filename = f"dataset_split_{dataset_prefix}_90_5_5.json"
+    else:
+        # Default 80-10-10
+        if split_protocol != '80-10-10':
+            print(f"⚠️ Unknown protocol '{split_protocol}', falling back to 80-10-10")
+        target_ratios = (0.80, 0.10, 0.10)
+        split_filename = f"dataset_split_{dataset_prefix}_80_10_10.json"
         
     print(f"📄 Using split file: {split_filename} (Mode: {split_protocol})")
     

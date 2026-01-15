@@ -561,7 +561,7 @@ if __name__ == "__main__":
         parser.add_argument('--seed', type=int, default=42, help='Random seed (default: 42)')
         parser.add_argument('--epochs', type=int, help='Override total training epochs')
         parser.add_argument('--batch_size', type=int, help='Override batch size')
-        parser.add_argument('--split', type=str, choices=['90-5-5', '72-8-20'], help="Select Split Protocol")
+        parser.add_argument('--split', type=str, choices=['80-10-10', '90-5-5', '72-8-20'], help="Select Split Protocol")
         parser.add_argument('--freeze', type=int, dest='freeze', help='Override backbone freeze epochs')
         parser.add_argument('--freeze_backbone_epochs', type=int, dest='freeze_alias', help='Alias for --freeze') 
         
@@ -579,8 +579,8 @@ if __name__ == "__main__":
     print("="*60)
     print("🎮 FADE-Net Interactive Training Launcher")
     print("="*60)
-    print("1. [Default]  Run Standard Benchmark (Seed 42, 90-5-5)")
-    print("2. [SOTA]     Run 2026 Academic Seed (Seed 2026, 90-5-5)")
+    print("1. [Default]  Run Standard Benchmark (Seed 42, 80-10-10)")
+    print("2. [SOTA]     Run 2026 Academic Seed (Seed 2026, 80-10-10)")
     print("3. [Batch]    Run All Academic Seeds (42, 3407, 2026, 1337, 1106)")
     print("4. [Custom]   Configure Manually")
     print("q. [Quit]     Exit")
@@ -638,10 +638,10 @@ if __name__ == "__main__":
         elif choice == '4':
             print("\n🔧 Custom Configuration Mode:")
             s = input("   - Seed [42]: ").strip() or '42'
-            sp_choice = input("   - Split (1: 90-5-5, 2: 72-8-20, 3: 80-10-10) [3]: ").strip()
-            if sp_choice == '1':
+            sp_choice = input("   - Split (1: 80-10-10, 2: 90-5-5, 3: 72-8-20) [1]: ").strip()
+            if sp_choice == '2':
                 split = '90-5-5'
-            elif sp_choice == '2':
+            elif sp_choice == '3':
                 split = '72-8-20'
             else:
                 split = '80-10-10'  # Default to Robust 80-10-10
