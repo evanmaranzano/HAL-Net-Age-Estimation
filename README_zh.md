@@ -40,7 +40,7 @@
 ```text
 code/
 ├── src/                  # [源码] 核心逻辑与入口点
-│   ├── config.py         # 配置 (开关: use_aaf, ablation...)
+│   ├── config.py         # 配置 (超参数, ablation...)
 │   ├── model.py          # FADE-Net 架构
 │   ├── dataset.py        # 数据集加载与增强
 │   ├── train.py          # 主训练脚本
@@ -84,7 +84,7 @@ python src/train.py --epochs 120 --freeze_backbone_epochs 5
 ### 3. 评估
 ```bash
 python scripts/plot_results.py    # 生成可视化结果
-python src/benchmark_speed.py     # 测试 FPS
+python scripts/benchmark_speed.py     # 测试 FPS
 ```
 
 ---
@@ -105,7 +105,7 @@ python src/gui_demo.py
 
 ---
 
-## 📊 内部基准测试 (AFAD 数据集, 分层 80-10-10 分割)
+## 📊 内部基准测试 (AFAD 数据集, 分层 72-8-20 分割)
 
 | 排名 | 方法 | 骨干网络 | MAE (越低越好 ↓) | 参数量 | 年份 / 来源 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -125,7 +125,7 @@ python src/gui_demo.py
 [1] Gated Residual Attention Network (GRANET)
 [2] Cross-Dataset Training Convolutional Neural Network (CDCNN)
 
-> **注意**: 在 AFAD 数据集上使用标准的分层 80-10-10 分割进行评估。
+> **注意**: 在 AFAD 数据集上使用标准的分层 72-8-20 分割进行评估。
 
 ### 📊 与近期 AFAD 专项研究的对比 (2023-2024)
 与过去两年明确在 AFAD 上进行基准测试的论文进行直接对比：
@@ -139,7 +139,7 @@ python src/gui_demo.py
 
 > **📝 关于性能的说明:** 我们报告的 **3.02** MAE 是在留出的测试集 (5%) 上评估的。我们在训练期间也观察到了 **3.01** 的最佳验证集 MAE。
 
-> **📝 关于分割协议的说明:** 不同的论文使用不同的数据分割。我们使用分层的 **80-10-10 分割** (训练/验证/测试) 以最大程度地利用训练数据，同时确保测试集的严格隔离。一些基线 (如 CORAL, OR-CNN) 暗示使用 80-20 分割 (通常包含保留的内部验证集)，实际上使用 ~72-80% 进行训练。尽管我们的测试集隔离更加严格，FADE-Net 仍然实现了具有竞争力的 SOTA 性能。
+> **📝 关于分割协议的说明:** 不同的论文使用不同的数据分割。我们使用分层的 **72-8-20 分割** (训练/验证/测试),这是标准的 80-20 实现,从训练部分中显式划出验证集。这提供了 72% 的训练数据、8% 的验证数据和 20% 的测试数据。此协议在学术基准测试中被广泛使用,确保与其他方法的公平比较。
 
 ### 🌐 与通用 Transformer SOTA 的对比 (参考)
 为了提供更广泛的背景，我们也参考了在类似大规模数据集 (IMDB-Wiki) 上评估的大型 Transformer 模型：

@@ -27,7 +27,7 @@ def my_collate_fn(batch):
 def get_stratified_split(dataset, all_ages, split_ratios=(0.80, 0.10, 0.10), save_path=None):
     """
     Perform Stratified Sampling based on age labels.
-    Ensures 80/10/10 split holds true for *every single age class*.
+    Ensures the specified split ratio holds true for *every single age class*.
     """
     if save_path is None:
         save_path = os.path.join(ROOT_DIR, "dataset_split_stratified.json")        
@@ -53,7 +53,8 @@ def get_stratified_split(dataset, all_ages, split_ratios=(0.80, 0.10, 0.10), sav
         except Exception as e:
             print(f"⚠️ Load failed ({e}), regenerating...")
 
-    print("⚖️ Performing Stratified Sampling (80/10/10 per age)...")
+    ratios_str = '/'.join([f"{int(r*100)}" for r in split_ratios])
+    print(f"⚖️ Performing Stratified Sampling ({ratios_str} per age)...")
     
     # Group indices by age
     indices_by_age = defaultdict(list)
@@ -111,7 +112,7 @@ class AFADDataset(Dataset):
             print(f"⚠️ [AFAD] Path not found: {root_dir}")
         else:
             print("⏳ Scanning AFAD...")
-            # Sorted ensures determinstic order before shuffling
+            # Sorted ensures deterministic order before shuffling
             for age_folder in sorted(os.listdir(root_dir)):
                 age_path = os.path.join(root_dir, age_folder)
                 if os.path.isdir(age_path) and age_folder.isdigit():
@@ -151,54 +152,7 @@ class AFADDataset(Dataset):
         # If all retries fail, return None (collate_fn will handle, but risk is minimized)
         return None
 
-# ==========================================
-# 3. AAF Dataset
-# ==========================================
-class AAFDataset(Dataset):
-    def __init__(self, root_dir, transform=None, config=None):
-        self.transform = transform
-        self.config = config
-        self.dldl_proc = DLDLProcessor(config)
-        self.image_paths = []
-        self.ages = []
-        
-        if not os.path.exists(root_dir):
-            print(f"⚠️ [AAF] Path not found: {root_dir}")
-        else:
-            print("⏳ Scanning AAF...")
-            for img_name in sorted(os.listdir(root_dir)):
-                if img_name.lower().endswith(('.jpg', '.png', '.jpeg')):
-                    try:
-                        if 'A' in img_name.upper():
-                            age_str = img_name.upper().split('A')[1].split('.')[0]
-                            age = int(age_str)
-                            if age < config.min_age or age > config.max_age:
-                                continue
-                            self.image_paths.append(os.path.join(root_dir, img_name))
-                            self.ages.append(float(age))
-                    except:
-                        continue
-            print(f"✅ AAF Loaded: {len(self.image_paths)} images")
 
-    def __len__(self):
-        return len(self.image_paths)
-
-    def __getitem__(self, idx):
-        # 🛡️ Robust Loading with Retry Strategy
-        for attempt in range(3):
-            try:
-                img_path = self.image_paths[idx]
-                age = self.ages[idx]
-                image = Image.open(img_path).convert('RGB')
-                if self.transform:
-                    image = self.transform(image)
-                label_dist = self.dldl_proc.generate_label_distribution(age)
-                return image, label_dist, torch.tensor(age, dtype=torch.float32)
-            except Exception as e:
-                # If failed, pick a random index
-                idx = np.random.randint(len(self.image_paths))
-        
-        return None
 
 
 # ==========================================
@@ -357,7 +311,7 @@ class SafeRandomErasing(object):
                     return _img
 
         # If failed to find safe spot after retries, return original (or unsafe fallback)
-        print("⚠️ SafeRandomErasing: Failed to find safe spot (10 attempts). Skipping.")
+        print("⚠️ SafeRandomErasing: Failed to find safe spot (20 attempts). Skipping.")
         return _img
 
 # ==========================================
@@ -417,12 +371,8 @@ def get_dataloaders(config):
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
     
-    dataset_names = []
-    if getattr(config, 'use_afad', True): dataset_names.append("AFAD")
-    if getattr(config, 'use_aaf', False): dataset_names.append("AAF")
-    
     print("=" * 60)
-    print(f"🚀 Loading Dataset ({' + '.join(dataset_names)})")
+    print(f"🚀 Loading Dataset (AFAD)")
     print("=" * 60)
     
     all_datasets = []
@@ -436,14 +386,6 @@ def get_dataloaders(config):
             all_ages.extend(afad.ages)
             print(f"✅ [Dataset] Added AFAD ({len(afad)} images)")
             
-    # 2. AAF
-    if getattr(config, 'use_aaf', False) and hasattr(config, 'aaf_dir') and os.path.exists(config.aaf_dir):
-        aaf = AAFDataset(config.aaf_dir, config=config)
-        if len(aaf) > 0:
-            all_datasets.append(aaf)
-            all_ages.extend(aaf.ages)
-            print(f"✅ [Dataset] Added AAF ({len(aaf)} images)")
-            
     if not all_datasets:
         raise ValueError("No datasets found! Check config paths.")
         
@@ -455,16 +397,8 @@ def get_dataloaders(config):
     full_dataset = ConcatDataset(all_datasets)
     print(f"\n📦 Total Images: {len(full_dataset)}")
     
-    # Stratified Split with Dynamic Naming & Protocol
-    split_filename = "dataset_split_Mixed.json"
-    dataset_prefix = "Mixed"
-    if len(all_datasets) == 1:
-        if isinstance(all_datasets[0], AFADDataset):
-            split_filename = "dataset_split_AFAD.json"
-            dataset_prefix = "AFAD"
-        elif isinstance(all_datasets[0], AAFDataset):
-            split_filename = "dataset_split_AAF.json"
-            dataset_prefix = "AAF"
+    # Stratified Split
+    dataset_prefix = "AFAD"
             
     # Determine Ratios based on Protocol
     split_protocol = getattr(config, 'split_protocol', '80-10-10')

@@ -42,10 +42,11 @@
 ```text
 code/
 ├── src/                  # [Source] Core Logic & Entry Points
-│   ├── config.py         # Configuration (Toggles: use_aaf, ablation...)
+│   ├── config.py         # Configuration (Hyperparams, ablation...)
 │   ├── model.py          # FADE-Net Architecture
 │   ├── dataset.py        # Dataset Loading & Augmentation
 │   ├── train.py          # Main Training Script
+│   ├── web_demo.py       # Web Application (Streamlit)
 │   ├── gui_demo.py       # GUI Application (PyQt5)
 │   └── utils.py          # Utilities (DLDL, EMA, Metrics)
 ├── scripts/              # [Scripts] Tools & Preprocessing
@@ -85,7 +86,7 @@ python src/train.py --epochs 120 --freeze_backbone_epochs 5
 ### 3. Evaluation
 ```bash
 python scripts/plot_results.py    # Generate visualization
-python src/benchmark_speed.py     # Test FPS
+python scripts/benchmark_speed.py     # Test FPS
 ```
 
 ---
@@ -106,7 +107,7 @@ python src/gui_demo.py
 
 ---
 
-## 📊 Internal Benchmark (AFAD Dataset, Stratified 80-10-10 Split)
+## 📊 Internal Benchmark (AFAD Dataset, Stratified 72-8-20 Split)
 
 | Rank | Method | Backbone | MAE (Lower ↓) | Params | Year / Source |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -126,7 +127,7 @@ python src/gui_demo.py
 [1] Gated Residual Attention Network (GRANET)
 [2] Cross-Dataset Training Convolutional Neural Network (CDCNN)
 
-> **Note**: Evaluated on AFAD dataset with standard Stratified 80-10-10 Split.
+> **Note**: Evaluated on AFAD dataset with standard Stratified 72-8-20 Split.
 
 ### 📊 Comparison with Recent AFAD-Specific Studies (2023-2024)
 Direct comparison with papers that explicitly benchmarked on AFAD in the last two years:
@@ -140,7 +141,7 @@ Direct comparison with papers that explicitly benchmarked on AFAD in the last tw
 
 > **📝 Note on Performance:** Our reported MAE of **3.02** is evaluated on the held-out Test Set (5%). We also observed a best Validation MAE of **3.01** during training.
 
-> **📝 Note on Split Protocol:** Different papers use varying data splits. We use a stratified **80-10-10 split** (Train/Val/Test) to maximize training data utilization while ensuring a strictly isolated test set. Some baselines (e.g., CORAL, OR-CNN) imply an 80-20 split (often with internal validation reserved), effectively using ~72-80% for training. Despite our stricter test set isolation, FADE-Net achieves competitive SOTA performance.
+> **📝 Note on Split Protocol:** Different papers use varying data splits. We use a stratified **72-8-20 split** (Train/Val/Test) which is a standard 80-20 implementation with an explicit validation set carved out from the training portion. This provides 72% for training, 8% for validation, and 20% for testing. This protocol is widely used in academic benchmarks and ensures fair comparison with other methods.
 
 ### 🌐 Comparison with General Transformer SOTA (Context)
 For broader context, we look at massive Transformer models evaluated on similar large-scale datasets (IMDB-Wiki):

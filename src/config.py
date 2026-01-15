@@ -13,7 +13,7 @@ class Config:
     
     # --- 1.1 📊 Split Protocol (New) ---
     # Options: '80-10-10' (Our Best), '90-5-5' (Legacy), or '72-8-20' (Standard 80-20 implementation)
-    split_protocol = '80-10-10'
+    split_protocol = '72-8-20'
 
     # --- 1.2 🌱 Academic Seeds (with Meanings) ---
     ACADEMIC_SEEDS = {
@@ -71,7 +71,6 @@ class Config:
     freeze_backbone_epochs = 10  # Keep 10 for safety
     
     # 数据增强与正则化
-    # 数据增强与正则化
     dropout = 0.35               # ⚖️ 2027d: Adjusted to 0.35 (Rescue 1106: Stronger Regularization)
     use_mixup = True             # ✅ Re-enabled: Essential for Manifold Smoothing & Generalization
     
@@ -88,13 +87,11 @@ class Config:
     # 标签平滑 (Label Smoothing)
     label_smoothing = 0.0        # 禁用，避免污染 DLDL 分布
     
-    # 数据集开关 (Set use_aaf=False for pure academic benchmark)
+    # 数据集开关 (AFAD Only)
     use_afad = True
-    use_aaf = False   # 默认开启以增强鲁棒性，若需对比 SOTA 请设为 False
 
     # 数据集路径 relative to ROOT_DIR
     afad_dir = os.path.join(ROOT_DIR, "datasets", "AFAD")
-    aaf_dir = os.path.join(ROOT_DIR, "datasets", "AAF")
     
     # LDS (标签分布平滑)
     use_reweighting = True

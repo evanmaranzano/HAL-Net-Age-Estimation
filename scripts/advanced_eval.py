@@ -5,7 +5,7 @@ Advanced TTA and Multi-Seed Ensemble Evaluation
     python scripts/advanced_eval.py [--seed SEED] [--tta MODE] [--ensemble]
 
 功能:
-    1. 扩展 TTA (5-crop + flip = 10x 平均)
+    1. 扩展 TTA (Multi-Scale 3尺度 + flip = 6x 平均)
     2. 多种子 Ensemble
 """
 

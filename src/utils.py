@@ -1,4 +1,3 @@
-# utils.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -49,8 +48,8 @@ class DLDLProcessor:
             self.sigma_max = getattr(config, 'sigma_max', 3.5)
             # print("✅ [Loss] Adaptive Sigma: ENABLED") # avoid spamming
         else:
-            self.sigma = config.sigma
-            # print(f"ℹ️ [Loss] Adaptive Sigma: DISABLED (Fixed sigma={self.sigma})")
+            # 修复: 使用 getattr 提供默认值，避免 config.sigma 不存在时崩溃
+            self.sigma = getattr(config, 'sigma', 2.0)
         
         # Label Smoothing 参数
         self.label_smoothing = getattr(config, 'label_smoothing', 0.0)
